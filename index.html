@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>几何坦克：挑战最强AI</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+        body, html { width: 100%; height: 100%; overflow: hidden; background-color: #11111b; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #cdd6f4; touch-action: none; }
+        #gameCanvas { display: block; width: 100%; height: 100%; background-color: #1e1e2e; }
+
+        /* ==================== 极简纯粹主界面 ==================== */
+        #home-screen {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at center, rgba(24, 24, 37, 0.82), rgba(17, 17, 27, 0.96));
+            z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 24px; backdrop-filter: blur(6px);
+        }
+        #notice-bar {
+            background: rgba(243, 139, 168, 0.12); border: 1px solid rgba(243, 139, 168, 0.35);
+            color: #f38ba8; padding: 6px 16px; border-radius: 20px; font-size: 12px;
+            margin-bottom: 18px; max-width: 340px; text-align: center; font-weight: bold;
+        }
+        .game-logo {
+            font-size: 34px; font-weight: 900;
+            background: linear-gradient(135deg, #89b4fa, #cba6f7, #f38ba8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 6px; letter-spacing: 1px; cursor: pointer;
+        }
+        .game-sub { font-size: 13px; color: #a6adc8; margin-bottom: 26px; text-align: center; }
+
+        /* 守关魔王档案卡 */
+        .boss-showcase {
+            width: 100%; max-width: 330px;
+            background: linear-gradient(145deg, rgba(37, 38, 55, 0.92), rgba(24, 24, 37, 0.96));
+            border: 1.5px solid rgba(243, 139, 168, 0.45);
+            border-radius: 18px; padding: 18px 20px; margin-bottom: 28px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        .boss-badge {
+            display: inline-block; background: rgba(243, 139, 168, 0.2); color: #f38ba8;
+            padding: 4px 12px; border-radius: 12px; font-size: 11.5px; font-weight: bold; margin-bottom: 8px;
+        }
+        .boss-name { font-size: 24px; font-weight: 900; color: #f9e2af; margin-bottom: 12px; }
+        .dna-tags {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+            font-size: 12px; color: #cdd6f4; background: rgba(17, 17, 27, 0.6);
+            padding: 10px; border-radius: 10px; margin-bottom: 14px;
+        }
+        .dna-tags span { color: #89dceb; font-weight: bold; }
+        .record-row {
+            display: flex; justify-content: space-around; font-size: 13px; color: #a6adc8;
+            border-top: 1px solid #313244; padding-top: 12px;
+        }
+        .record-row b { color: #fff; font-size: 16px; }
+
+        /* 唯一核心大按钮 */
+        .start-btn {
+            width: 100%; max-width: 330px; padding: 17px;
+            border: none; border-radius: 16px;
+            background: linear-gradient(135deg, #f38ba8, #cba6f7);
+            color: #11111b; font-size: 19px; font-weight: 900;
+            letter-spacing: 1px;
+            box-shadow: 0 6px 25px rgba(243, 139, 168, 0.45);
+            transition: transform 0.12s;
+        }
+        .start-btn:active { transform: scale(0.95); }
+
+        /* ==================== 顶部战斗状态栏 ==================== */
+        #hud-top {
+            position: fixed; top: 0; left: 0; right: 0; height: 56px; background: #11111b;
+            border-bottom: 2px solid #313244; z-index: 20; display: none;
+            align-items: center; justify-content: space-between; padding: 0 12px;
+        }
+        #hud-title { font-size: 14.5px; font-weight: 900; color: #f9e2af; }
+        .hud-actions { display: flex; gap: 8px; }
+        .btn-small {
+            background: #313244; color: #cdd6f4; border: 1px solid #45475a;
+            padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold;
+        }
+        .btn-small:active { transform: scale(0.94); }
+
+        /* ==================== 底部手机操控舱 ==================== */
+        #touch-controls { position: fixed; bottom: 0; left: 0; width: 100%; height: 175px; z-index: 15; display: none; pointer-events: none; }
+        #joystick-zone { position: absolute; bottom: 22px; left: 26px; width: 126px; height: 126px; border-radius: 50%; background: rgba(255, 255, 255, 0.06); border: 2px solid rgba(137, 180, 250, 0.35); pointer-events: auto; }
+        #joystick-knob { position: absolute; top: 50%; left: 50%; width: 50px; height: 50px; margin-top: -25px; margin-left: -25px; border-radius: 50%; background: rgba(137, 180, 250, 0.9); box-shadow: 0 0 14px rgba(137, 180, 250, 0.6); }
+        #fire-btn { position: absolute; bottom: 26px; right: 26px; width: 112px; height: 112px; border-radius: 50%; background: radial-gradient(circle, rgba(243, 139, 168, 0.92), rgba(235, 160, 172, 0.65)); border: 3px solid rgba(255, 255, 255, 0.4); color: #11111b; font-size: 15px; font-weight: 900; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 0 18px rgba(243, 139, 168, 0.45); pointer-events: auto; }
+
+        /* ==================== 隐藏式站长GM后台弹窗 ==================== */
+        .fullscreen-modal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(17, 17, 27, 0.98); z-index: 120; display: none;
+            flex-direction: column; padding: 14px 14px 45px 14px;
+            overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y;
+        }
+        .admin-group { background: #1e1e2e; border: 1px solid #313244; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; flex-shrink: 0; }
+        .admin-group label { display: block; font-size: 12.5px; color: #89b4fa; font-weight: bold; margin-bottom: 4px; }
+        .admin-input { width: 100%; padding: 7px 10px; background: #11111b; border: 1px solid #45475a; color: #fff; border-radius: 6px; font-size: 13px; margin-bottom: 6px; user-select: text; -webkit-user-select: text; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. 极简纯粹主界面 -->
+    <div id="home-screen">
+        <div id="notice-bar">🔥 历经 3830 代遗传进化筛选，全网寻觅能击败它的人类玩家！</div>
+        <!-- 连点5下大标题进入站长GM后台 -->
+        <div class="game-logo" onclick="Admin.onLogoClick()">⚡ 几何坦克：AI觉醒</div>
+        <div class="game-sub">物理折线反弹 · 终极人工智能 1v1 竞技场</div>
+
+        <div class="boss-showcase">
+            <div class="boss-badge">🧬 遗传算法优胜个体 · 守关BOSS</div>
+            <div class="boss-name" id="home-boss-name">👑 王者G832</div>
+            <div class="dna-tags">
+                <div>⚡ 闪避神经: <span id="tag-dodge">2.58</span></div>
+                <div>🛡️ 冷枪警惕: <span id="tag-bnc">3.11</span></div>
+                <div>📐 几何折射: <span id="tag-iq">10级</span></div>
+                <div>🎯 折线阴人: <span id="tag-amb">93%</span></div>
+            </div>
+            <div class="record-row">
+                <div>你的胜场<br><b id="rec-p" style="color:#a6e3a1;">0</b></div>
+                <div>AI 胜场<br><b id="rec-ai" style="color:#f38ba8;">0</b></div>
+                <div>人类胜率<br><b id="rec-rate" style="color:#f9e2af;">0%</b></div>
+            </div>
+        </div>
+
+        <button class="start-btn" onclick="App.startChallenge()">⚔️ 立即挑战最强 AI</button>
+    </div>
+
+    <!-- 2. 战斗内极简顶部栏 -->
+    <div id="hud-top">
+        <span id="hud-title">🥊 你 0 : 0 👑王者G832</span>
+        <div class="hud-actions" id="hud-btns">
+            <button class="btn-small" style="background:#cba6f7;color:#11111b;" onclick="App.switchMap()">🗺️ 换图</button>
+            <button class="btn-small" onclick="App.goHome()">🏠 返回</button>
+        </div>
+    </div>
+
+    <!-- 3. 画布与底部操控舱 -->
+    <canvas id="gameCanvas"></canvas>
+    <div id="touch-controls">
+        <div id="joystick-zone"><div id="joystick-knob"></div></div>
+        <div id="fire-btn"><span>🔥</span><span style="font-size:12px;">按住或点屏</span></div>
+    </div>
+
+    <!-- 4. 隐藏式站长GM后台管理系统 (连点5次主标题触发) -->
+    <div id="admin-modal" class="fullscreen-modal">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #313244;flex-shrink:0;">
+            <b style="font-size:17px;color:#f38ba8;">🛠️ 站长 GM 后台管理系统</b>
+            <button onclick="Admin.close()" style="padding:6px 12px;background:#45475a;color:#fff;border:none;border-radius:6px;font-weight:bold;font-size:12px;">关闭 ✖</button>
+        </div>
+
+        <div class="admin-group">
+            <label>📢 主界面顶部横幅公告：</label>
+            <input type="text" id="adm-notice" class="admin-input">
+            <div style="display:flex;gap:8px;">
+                <div style="flex:1.2;">
+                    <label>👑 最强AI展示名称：</label>
+                    <input type="text" id="adm-boss-name" class="admin-input" style="margin-bottom:0;">
+                </div>
+                <div style="flex:0.8;">
+                    <label>🔑 后台授权密码：</label>
+                    <input type="text" id="adm-pin" class="admin-input" style="margin-bottom:0;">
+                </div>
+            </div>
+        </div>
+
+        <div class="admin-group">
+            <label>⚙️ 全局物理参数调控 (实时生效)：</label>
+            <div style="display:flex;gap:8px;font-size:12px;margin-bottom:4px;">
+                <div style="flex:1;">坦克移速: <input type="number" step="0.1" id="adm-tspd" class="admin-input" style="margin-bottom:2px;"></div>
+                <div style="flex:1;">子弹速度: <input type="number" step="0.1" id="adm-bspd" class="admin-input" style="margin-bottom:2px;"></div>
+            </div>
+            <div style="display:flex;gap:8px;font-size:12px;">
+                <div style="flex:1;">最大反弹次数: <input type="number" id="adm-bnc" class="admin-input" style="margin-bottom:0;"></div>
+                <div style="flex:1;">装填弹夹上限: <input type="number" id="adm-ammo" class="admin-input" style="margin-bottom:0;"></div>
+            </div>
+        </div>
+
+        <div class="admin-group">
+            <label>🧬 最强AI基因参数 (JSON) & 站长私密炼蛊室：</label>
+            <textarea id="adm-boss-dna" class="admin-input" style="height:56px;font-family:monospace;font-size:12px;"></textarea>
+            <div style="display:flex;gap:6px;">
+                <button onclick="Admin.enterSecretLab()" style="flex:1;padding:8px;background:#f9e2af;color:#11111b;border:none;border-radius:6px;font-weight:bold;font-size:12px;">
+                    🔬 进入站长300x炼蛊室
+                </button>
+                <button onclick="Admin.useLabChampAsBoss()" style="flex:1;padding:8px;background:#89dceb;color:#11111b;border:none;border-radius:6px;font-weight:bold;font-size:12px;">
+                    ⬆️ 提取炼蛊冠军设为BOSS
+                </button>
+            </div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:4px;padding-bottom:20px;flex-shrink:0;">
+            <button onclick="Admin.saveSettings()" style="flex:1;padding:12px 6px;background:#a6e3a1;color:#11111b;border:none;border-radius:8px;font-weight:bold;font-size:13.5px;">
+                💾 保存并应用配置
+            </button>
+            <button onclick="Admin.exportDeployHTML()" style="flex:1.15;padding:12px 6px;background:#89b4fa;color:#11111b;border:none;border-radius:8px;font-weight:bold;font-size:13.5px;">
+                📥 导出新HTML部署包
+            </button>
+        </div>
+    </div>
+
+<script>
+/**
+ * ====================================================================
+ * 全局配置与第3830代终极魔王【👑王者G832】核心基因
+ * ====================================================================
+ */
+window.SERVER_CONFIG = window.SERVER_CONFIG || {
+    adminPin: '8888',
+    noticeText: '🔥 历经 3830 代遗传进化筛选，全网寻觅能击败它的人类玩家！',
+    bossName: '👑 王者G832',
+    bossDNA: { dodge: 2.58, bncW: 3.11, wall: 1.45, cor: 1.65, lead: 0.05, iq: 10, amb: 0.93, dist: 175, freq: 0.045, pat: 0.88 },
+    tankSpeed: 3.1,
+    bulletSpeed: 4.3,
+    maxBounces: 5,
+    maxAmmo: 3
+};
+
+const STORAGE_KEY = 'TANK_PURE_CHALLENGE_V1';
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+/**
+ * ====================================================================
+ * 隐藏式站长 GM 后台控制器 (连点5下Logo触发)
+ * ====================================================================
+ */
+const Admin = {
+    clicks: 0, lastClick: 0,
+    onLogoClick() {
+        const now = Date.now();
+        if (now - this.lastClick > 1500) this.clicks = 0;
+        this.clicks++; this.lastClick = now;
+        if (this.clicks >= 5) {
+            this.clicks = 0;
+            const pin = prompt('🔒 请输入管理员授权码：');
+            if (pin === window.SERVER_CONFIG.adminPin) this.open();
+            else if (pin !== null) alert('⛔ 授权码验证失败！');
+        }
+    },
+    open() {
+        const cfg = window.SERVER_CONFIG;
+        document.getElementById('adm-notice').value = cfg.noticeText;
+        document.getElementById('adm-boss-name').value = cfg.bossName;
+        document.getElementById('adm-pin').value = cfg.adminPin;
+        document.getElementById('adm-tspd').value = cfg.tankSpeed;
+        document.getElementById('adm-bspd').value = cfg.bulletSpeed;
+        document.getElementById('adm-bnc').value = cfg.maxBounces;
+        document.getElementById('adm-ammo').value = cfg.maxAmmo;
+        document.getElementById('adm-boss-dna').value = JSON.stringify(cfg.bossDNA);
+        document.getElementById('admin-modal').style.display = 'flex';
+    },
+    close() { document.getElementById('admin-modal').style.display = 'none'; },
+    enterSecretLab() {
+        this.close();
+        App.startSecretLab();
+    },
+    useLabChampAsBoss() {
+        document.getElementById('adm-boss-name').value = `👑 王者G${AI.gen}`;
+        document.getElementById('adm-boss-dna').value = JSON.stringify(AI.champDNA);
+        alert(`✅ 已提取第 ${AI.gen} 代最强基因！请点击下方“保存并应用配置”。`);
+    },
+    applyConfig() {
+        const cfg = window.SERVER_CONFIG;
+        const d = cfg.bossDNA;
+        document.getElementById('notice-bar').innerText = cfg.noticeText;
+        document.getElementById('home-boss-name').innerText = cfg.bossName;
+        document.getElementById('tag-dodge').innerText = d.dodge;
+        document.getElementById('tag-bnc').innerText = d.bncW;
+        document.getElementById('tag-iq').innerText = d.iq + '级';
+        document.getElementById('tag-amb').innerText = Math.round((d.amb || 0.9) * 100) + '%';
+        Game.config.tankSpeed = Number(cfg.tankSpeed) || 3.1;
+        Game.config.bulletSpeed = Number(cfg.bulletSpeed) || 4.3;
+        Game.config.bulletMaxBounces = Number(cfg.maxBounces) || 5;
+        Game.player.maxAmmo = Number(cfg.maxAmmo) || 3;
+    },
+    saveSettings() {
+        try {
+            const cfg = window.SERVER_CONFIG;
+            cfg.noticeText = document.getElementById('adm-notice').value.trim();
+            cfg.bossName = document.getElementById('adm-boss-name').value.trim();
+            cfg.adminPin = document.getElementById('adm-pin').value.trim() || '8888';
+            cfg.tankSpeed = parseFloat(document.getElementById('adm-tspd').value);
+            cfg.bulletSpeed = parseFloat(document.getElementById('adm-bspd').value);
+            cfg.maxBounces = parseInt(document.getElementById('adm-bnc').value);
+            cfg.maxAmmo = parseInt(document.getElementById('adm-ammo').value);
+            cfg.bossDNA = JSON.parse(document.getElementById('adm-boss-dna').value);
+            localStorage.setItem('TANK_ADMIN_CFG', JSON.stringify(cfg));
+            this.applyConfig();
+            alert('✅ 配置已保存并生效！');
+            this.close();
+            return true;
+        } catch (e) {
+            alert('❌ DNA JSON 格式错误：' + e.message);
+            return false;
+        }
+    },
+    exportDeployHTML() {
+        if (!this.saveSettings()) return;
+        let html = document.documentElement.outerHTML;
+        const cfgScript = `\n<script>window.SERVER_CONFIG = ${JSON.stringify(window.SERVER_CONFIG)};<\/script>\n`;
+        html = html.replace('<head>', '<head>' + cfgScript);
+        const blob = new Blob(['<!DOCTYPE html>\n' + html], { type: 'text/html;charset=utf-8' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'index.html';
+        a.click();
+    }
+};
+
+/**
+ * ====================================================================
+ * 核心物理与游戏引擎
+ * ====================================================================
+ */
+const Game = {
+    width: window.innerWidth, height: window.innerHeight, paused: false, inMenu: true,
+    config: { tankRadius: 13, bulletRadius: 4, bulletSpeed: 4.3, tankSpeed: 3.1, fireCooldown: 520, bulletMaxBounces: 5 },
+    arena: { topY: 56, botY: 500, ah: 444 }, mapIndex: 0,
+    player: { x: 200, y: 300, bodyAngle: -1.57, turretAngle: -1.57, dead: false, ammo: 3, maxAmmo: 3, lastAmmoRegen: 0, lastShotTime: 0 },
+    bullets: [], walls: [], particles: [],
+    inputs: { moveX: 0, moveY: 0, isFiring: false, keys: {} },
+
+    initMap() {
+        this.width = document.documentElement.clientWidth || window.innerWidth;
+        this.height = document.documentElement.clientHeight || window.innerHeight;
+        canvas.width = this.width; canvas.height = this.height;
+        const w = this.width, h = this.height, t = 12;
+        const topY = this.inMenu ? 0 : 56, botY = this.inMenu ? h : h - 175, ah = botY - topY;
+        this.arena = { topY, botY, w, ah };
+        const cx = w * 0.5, cy = topY + ah * 0.5;
+        const walls = [
+            { x: 0, y: topY, w: w, h: t, color: '#45475a' }, { x: 0, y: botY - t, w: w, h: t, color: '#45475a' },
+            { x: 0, y: topY, w: t, h: ah, color: '#45475a' }, { x: w - t, y: topY, w: t, h: ah, color: '#45475a' }
+        ];
+        const mt = this.mapIndex % 3;
+        if (mt === 0) {
+            walls.push(
+                { x: cx - w*0.14, y: cy - 6, w: w*0.28, h: 12, color: '#585b70' }, { x: cx - 6, y: cy - ah*0.14, w: 12, h: ah*0.28, color: '#585b70' },
+                { x: w*0.18, y: topY + ah*0.2, w: w*0.18, h: 12, color: '#585b70' }, { x: w*0.18, y: topY + ah*0.2, w: 12, h: ah*0.15, color: '#585b70' },
+                { x: w*0.64, y: topY + ah*0.2, w: w*0.18, h: 12, color: '#585b70' }, { x: w*0.82 - 12, y: topY + ah*0.2, w: 12, h: ah*0.15, color: '#585b70' },
+                { x: w*0.18, y: topY + ah*0.8 - 12, w: w*0.18, h: 12, color: '#585b70' }, { x: w*0.18, y: topY + ah*0.65, w: 12, h: ah*0.15, color: '#585b70' },
+                { x: w*0.64, y: topY + ah*0.8 - 12, w: w*0.18, h: 12, color: '#585b70' }, { x: w*0.82 - 12, y: topY + ah*0.65, w: 12, h: ah*0.15, color: '#585b70' }
+            );
+        } else if (mt === 1) {
+            walls.push(
+                { x: w*0.25, y: topY + ah*0.22, w: w*0.5, h: 12, color: '#585b70' }, { x: w*0.18, y: cy - 6, w: w*0.24, h: 12, color: '#585b70' },
+                { x: w*0.58, y: cy - 6, w: w*0.24, h: 12, color: '#585b70' }, { x: w*0.25, y: topY + ah*0.78 - 12, w: w*0.5, h: 12, color: '#585b70' }
+            );
+        } else {
+            for (let r = 1; r <= 2; r++) for (let c = 1; c <= 2; c++) walls.push({ x: w*(c*0.33) - 18, y: topY + ah*(r*0.33) - 18, w: 36, h: 36, color: '#585b70' });
+            walls.push({ x: cx - 6, y: cy - ah*0.12, w: 12, h: ah*0.24, color: '#585b70' });
+        }
+        this.walls = walls;
+    },
+    circleRect(cx, cy, cr, rx, ry, rw, rh) {
+        const x = Math.max(rx, Math.min(cx, rx + rw)), y = Math.max(ry, Math.min(cy, ry + rh));
+        return ((cx - x)**2 + (cy - y)**2) < cr*cr;
+    },
+    dist(x1, y1, x2, y2) { return Math.hypot(x2 - x1, y2 - y1); },
+    getSafeSpawn(posType = null) {
+        const ar = this.arena, r = this.config.tankRadius + 8;
+        for (let i = 0; i < 60; i++) {
+            const x = 28 + Math.random() * (this.width - 56);
+            let y = ar.topY + 24 + Math.random() * (ar.ah - 48);
+            if (posType === true) y = ar.topY + 24 + Math.random() * (ar.ah * 0.25);
+            if (posType === false) y = ar.botY - 24 - Math.random() * (ar.ah * 0.25);
+            let hit = false;
+            for (let w of this.walls) if (this.circleRect(x, y, r, w.x, w.y, w.w, w.h)) { hit = true; break; }
+            if (!hit) return { x, y };
+        }
+        return { x: this.width / 2, y: ar.botY - 35 };
+    },
+    spawnBullet(x, y, angle, owner, color) {
+        const spd = this.config.bulletSpeed, r = this.config.bulletRadius;
+        let vx = Math.cos(angle)*spd, vy = Math.sin(angle)*spd, bx = x, by = y, bnc = 0;
+        const stepLen = (this.config.tankRadius + r + 4) / 6;
+        for (let s = 0; s < 6; s++) {
+            const svx = (vx/spd)*stepLen, svy = (vy/spd)*stepLen; let hit = false;
+            bx += svx; for (let w of this.walls) if (this.circleRect(bx,by,r,w.x,w.y,w.w,w.h)){ bx-=svx; vx=-vx; hit=true; break; }
+            by += svy; for (let w of this.walls) if (this.circleRect(bx,by,r,w.x,w.y,w.w,w.h)){ by-=svy; vy=-vy; hit=true; break; }
+            if (hit) bnc++;
+        }
+        this.bullets.push({ x:bx, y:by, vx, vy, radius:r, bounces:bnc, maxBounces:this.config.bulletMaxBounces, color, owner, stepsAlive:0 });
+    },
+    spawnExplosion(x, y, color) {
+        if (AI.speed > 5) return;
+        for (let i = 0; i < 15; i++) {
+            const a = Math.random()*6.28, s = 1 + Math.random()*3.8;
+            this.particles.push({ x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, radius:2+Math.random()*3, alpha:1, color });
+        }
+    },
+    shoot() {
+        const p = this.player;
+        if (p.dead || AI.spectate) return;
+        const now = Date.now();
+        if (now - p.lastShotTime < this.config.fireCooldown || p.ammo <= 0) return;
+        p.lastShotTime = now; p.ammo--;
+        this.spawnBullet(p.x, p.y, p.turretAngle, 'player', '#89b4fa');
+    },
+    updatePlayer() {
+        const p = this.player, now = Date.now();
+        if (AI.spectate) { p.dead = true; p.x = -999; return; }
+        if (p.ammo < p.maxAmmo && now - p.lastAmmoRegen > 1050) { p.ammo++; p.lastAmmoRegen = now; }
+        if (p.dead) return;
+        const r = this.config.tankRadius;
+        let vx = this.inputs.moveX * this.config.tankSpeed, vy = this.inputs.moveY * this.config.tankSpeed;
+        const k = this.inputs.keys;
+        if (k['KeyW'] || k['ArrowUp']) vy = -this.config.tankSpeed;
+        if (k['KeyS'] || k['ArrowDown']) vy = this.config.tankSpeed;
+        if (k['KeyA'] || k['ArrowLeft']) vx = -this.config.tankSpeed;
+        if (k['KeyD'] || k['ArrowRight']) vx = this.config.tankSpeed;
+        p.lvx = vx; p.lvy = vy;
+        if (Math.abs(vx) > 0.05 || Math.abs(vy) > 0.05) {
+            p.bodyAngle = Math.atan2(vy, vx);
+            if (!TouchCtrl.isAiming) p.turretAngle = p.bodyAngle;
+        }
+        p.x += vx; for (let w of this.walls) if (this.circleRect(p.x,p.y,r,w.x,w.y,w.w,w.h)) { p.x -= vx; break; }
+        p.y += vy; for (let w of this.walls) if (this.circleRect(p.x,p.y,r,w.x,w.y,w.w,w.h)) { p.y -= vy; break; }
+        if (this.inputs.isFiring || k['Space']) this.shoot();
+        for (let i = this.bullets.length - 1; i >= 0; i--) {
+            let b = this.bullets[i];
+            if (((b.owner!=='player')||(b.bounces>0&&b.stepsAlive>8)||(b.stepsAlive>20)) && this.dist(p.x,p.y,b.x,b.y) < r+b.radius) {
+                this.bullets.splice(i, 1); this.spawnExplosion(p.x, p.y, '#89b4fa');
+                p.dead = true; AI.onEntityKilled(b.owner, 'player'); break;
+            }
+        }
+    },
+    updateBullets() {
+        for (let i = this.bullets.length - 1; i >= 0; i--) {
+            let b = this.bullets[i]; b.stepsAlive++; let bw = false;
+            for (let s = 0; s < 2; s++) {
+                b.x += b.vx*0.5; for (let w of this.walls) if (this.circleRect(b.x,b.y,b.radius,w.x,w.y,w.w,w.h)){ b.x-=b.vx*0.5; b.vx=-b.vx; bw=true; break; }
+                b.y += b.vy*0.5; for (let w of this.walls) if (this.circleRect(b.x,b.y,b.radius,w.x,w.y,w.w,w.h)){ b.y-=b.vy*0.5; b.vy=-b.vy; bw=true; break; }
+            }
+            if (bw) { b.bounces++; if (b.bounces > b.maxBounces) this.bullets.splice(i, 1); }
+            else if (b.stepsAlive > 550) this.bullets.splice(i, 1);
+        }
+    },
+    drawTank(x, y, bAng, tAng, col, lbl, isCrown) {
+        const r = this.config.tankRadius, s = r / 22;
+        ctx.save(); ctx.translate(x, y);
+        ctx.save(); ctx.rotate(bAng);
+        ctx.fillStyle = '#313244'; ctx.fillRect(-24*s,-24*s,48*s,10*s); ctx.fillRect(-24*s,14*s,48*s,10*s);
+        ctx.fillStyle = col; ctx.fillRect(-20*s,-17*s,40*s,34*s); ctx.strokeStyle = '#11111b'; ctx.lineWidth = 1.8; ctx.strokeRect(-20*s,-17*s,40*s,34*s);
+        ctx.restore();
+        ctx.save(); ctx.rotate(tAng);
+        ctx.fillStyle = '#cdd6f4'; ctx.fillRect(0,-4.5*s,32*s,9*s); ctx.strokeStyle = '#11111b'; ctx.lineWidth = 1.4; ctx.strokeRect(0,-4.5*s,32*s,9*s);
+        ctx.beginPath(); ctx.arc(0,0,12*s,0,Math.PI*2); ctx.fillStyle = col; ctx.fill(); ctx.stroke();
+        ctx.restore();
+        if (lbl) { ctx.fillStyle = col; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText((isCrown?'👑':'')+lbl, 0, -r-6); }
+        ctx.restore();
+    },
+    render() {
+        const ar = this.arena;
+        ctx.clearRect(0, 0, this.width, this.height);
+        if (!this.inMenu) {
+            ctx.fillStyle = '#11111b'; ctx.fillRect(0, ar.botY, this.width, this.height - ar.botY);
+            ctx.strokeStyle = '#89b4fa'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, ar.botY); ctx.lineTo(this.width, ar.botY); ctx.stroke();
+        }
+        ctx.strokeStyle = 'rgba(255,255,255,0.03)'; ctx.lineWidth = 1;
+        for (let x = 0; x < this.width; x += 36) { ctx.beginPath(); ctx.moveTo(x, ar.topY); ctx.lineTo(x, ar.botY); ctx.stroke(); }
+        for (let y = ar.topY; y < ar.botY; y += 36) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(this.width, y); ctx.stroke(); }
+        for (let w of this.walls) { ctx.fillStyle = w.color; ctx.fillRect(w.x,w.y,w.w,w.h); ctx.strokeStyle='#11111b'; ctx.lineWidth=1.5; ctx.strokeRect(w.x,w.y,w.w,w.h); }
+        for (let b of this.bullets) { ctx.beginPath(); ctx.arc(b.x,b.y,b.radius,0,6.28); ctx.fillStyle=b.color; ctx.fill(); }
+        const p = this.player;
+        if (!p.dead && !AI.spectate) {
+            this.drawTank(p.x, p.y, p.bodyAngle, p.turretAngle, '#89b4fa', '你', false);
+            for (let i = 0; i < p.maxAmmo; i++) {
+                ctx.fillStyle = i < p.ammo ? '#89b4fa' : 'rgba(255,255,255,0.2)';
+                ctx.fillRect(p.x - 14 + i*10, p.y + 18, 8, 3.5);
+            }
+        }
+        for (let b of AI.bots) if (!b.dead) {
+            this.drawTank(b.x, b.y, b.bodyAngle, b.turretAngle, b.color, b.name, b.isElite);
+        }
+        for (let i = this.particles.length - 1; i >= 0; i--) {
+            let pt = this.particles[i]; pt.x += pt.vx; pt.y += pt.vy; pt.alpha -= 0.04;
+            if (pt.alpha <= 0) { this.particles.splice(i, 1); continue; }
+            ctx.save(); ctx.globalAlpha = Math.max(0,pt.alpha); ctx.beginPath(); ctx.arc(pt.x,pt.y,pt.radius,0,6.28); ctx.fillStyle = pt.color; ctx.fill(); ctx.restore();
+        }
+        if (!this.inMenu) {
+            ctx.fillStyle = '#a6adc8'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText(AI.mode === 'LAB_KOTH' ? `🔬 站长私密炼蛊室 G${AI.gen} (${AI.speed}x)` : `🎮 左下摇杆移动 | 右侧按钮或点击屏幕任意位置射击`, this.width/2, ar.botY + 22);
+        }
+    }
+};
+
+/**
+ * ====================================================================
+ * AI 决策与站长后台炼蛊引擎
+ * ====================================================================
+ */
+const AI = {
+    gen: 3830, bestScore: 3064, pWins: 0, aiWins: 0,
+    champDNA: { ...window.SERVER_CONFIG.bossDNA }, pool: [], bots: [],
+    mode: 'DUEL', spectate: true, speed: 1, ticks: 0,
+    koth: { king: 0, chal: 1, next: 2, matchTicks: 0 },
+
+    fixDNA(d = {}) {
+        return {
+            dodge: d.dodge ?? +(1.5 + Math.random()*2).toFixed(2), bncW: d.bncW ?? +(1.2 + Math.random()*1.5).toFixed(2),
+            wall: d.wall ?? +(0.8 + Math.random()*1.2).toFixed(2), cor: d.cor ?? +(0.5 + Math.random()*1.5).toFixed(2),
+            lead: d.lead ?? +(0.2 + Math.random()*0.8).toFixed(2), iq: d.iq ?? Math.floor(5 + Math.random()*8),
+            amb: d.amb ?? +(0.2 + Math.random()*0.7).toFixed(2), dist: d.dist ?? Math.round(120 + Math.random()*130),
+            freq: d.freq ?? +(0.02 + Math.random()*0.05).toFixed(3), pat: d.pat ?? +(0.8 + Math.random()*0.6).toFixed(2)
+        };
+    },
+    init() {
+        try {
+            const adm = JSON.parse(localStorage.getItem('TANK_ADMIN_CFG'));
+            if (adm) Object.assign(window.SERVER_CONFIG, adm);
+        } catch(e){}
+        Admin.applyConfig();
+
+        let sv = null; try { sv = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e){}
+        if (sv) {
+            this.gen = sv.gen || 3830; this.bestScore = sv.bestScore || 3064;
+            this.pWins = sv.pWins || 0; this.aiWins = sv.aiWins || 0;
+            this.champDNA = this.fixDNA(sv.champDNA || window.SERVER_CONFIG.bossDNA);
+            this.pool = (sv.pool && sv.pool.length === 6) ? sv.pool.map(d=>this.fixDNA(d)) : [];
+        }
+        if (!this.pool.length) this.pool = [{ ...window.SERVER_CONFIG.bossDNA }, ...Array.from({ length: 5 }, () => this.fixDNA())];
+        this.updateHomeStats();
+    },
+    save() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                gen: this.gen, bestScore: this.bestScore, pWins: this.pWins, aiWins: this.aiWins,
+                champDNA: this.champDNA, pool: this.pool
+            }));
+        } catch(e){}
+        this.updateHomeStats();
+    },
+    updateHomeStats() {
+        document.getElementById('rec-p').innerText = this.pWins;
+        document.getElementById('rec-ai').innerText = this.aiWins;
+        const tot = this.pWins + this.aiWins;
+        document.getElementById('rec-rate').innerText = tot > 0 ? Math.round((this.pWins / tot) * 100) + '%' : '0%';
+    },
+    calcFit(b) { return Math.round(b.kills*150 + (b.streak||0)*90 + Math.floor(b.dodged)*15 + (b.ticks/60)*4 - b.suicides*110); },
+
+    spawnLabGen() {
+        const COLS = ['#f38ba8','#fab387','#f9e2af','#a6e3a1','#89dceb','#cba6f7'];
+        this.bots = []; this.ticks = 0; Game.bullets = [];
+        for (let i = 0; i < 6; i++) {
+            const sp = Game.getSafeSpawn(null);
+            this.bots.push({
+                id:'ai_'+i, idx:i, name:'#'+(i+1), color:COLS[i], isElite:i===0,
+                dna:this.fixDNA(this.pool[i]), x:sp.x, y:sp.y, bodyAngle:0, turretAngle:0,
+                dead: this.mode === 'LAB_KOTH' ? (i > 1) : false,
+                ammo:3, maxAmmo:3, ammoT:0, cd:25, kills:0, streak:0, shots:0, suicides:0, dodged:0, ticks:0, dir:i%2?1:-1
+            });
+        }
+        if (this.mode === 'LAB_KOTH') {
+            this.koth = { king: 0, chal: 1, next: 2, matchTicks: 0 };
+            const s1 = Game.getSafeSpawn(true), s2 = Game.getSafeSpawn(false);
+            this.bots[0].x = s1.x; this.bots[0].y = s1.y; this.bots[1].x = s2.x; this.bots[1].y = s2.y;
+        }
+    },
+    nextArenaBout(winIdx) {
+        Game.bullets = [];
+        if (this.koth.next >= 6) { this.evolve(); return; }
+        this.koth.king = winIdx; this.koth.chal = this.koth.next++; this.koth.matchTicks = 0;
+        const k = this.bots[this.koth.king], c = this.bots[this.koth.chal];
+        k.dead = false; k.ammo = 3; k.cd = 25; c.dead = false; c.ammo = 3; c.cd = 25;
+        const s1 = Game.getSafeSpawn(true), s2 = Game.getSafeSpawn(false);
+        k.x = s1.x; k.y = s1.y; c.x = s2.x; c.y = s2.y;
+    },
+    evolve() {
+        this.bots.forEach(b => b.fit = this.calcFit(b));
+        this.bots.sort((a,b) => b.fit - a.fit);
+        const a = this.bots[0], b = this.bots[1];
+        if (a.fit > this.bestScore) { this.bestScore = a.fit; this.champDNA = { ...a.dna }; }
+        const cross = (d1,d2) => { const r={}; for(let k in d1) r[k]=Math.random()<.5?d1[k]:d2[k]; return r; };
+        const mut = (d, r) => {
+            const m = (v,s,mn,mx,c=2) => +Math.max(mn,Math.min(mx,v+(Math.random()*2-1)*s*r)).toFixed(c);
+            return {
+                dodge:m(d.dodge,.4,.8,4.5), bncW:m(d.bncW,.3,.8,3.5), wall:m(d.wall,.3,.4,2.5), cor:m(d.cor,.3,.2,2.5),
+                lead:m(d.lead,.2,0,1.3), iq:m(d.iq,2,4,14,0), amb:m(d.amb,.2,0,1), dist:m(d.dist,25,85,240,0), freq:m(d.freq,.01,.01,.1,3), pat:m(d.pat,.2,.5,1.8)
+            };
+        };
+        this.pool = [{...a.dna}, {...this.champDNA}, mut(cross(a.dna,b.dna),.6), mut(cross(a.dna,this.champDNA),.8), mut(cross(b.dna,this.bots[2].dna),1), mut(a.dna,1.7)];
+        this.gen++; this.save(); this.spawnLabGen();
+        if (this.mode === 'LAB_KOTH') document.getElementById('hud-title').innerText = `🔬 炼蛊 G${this.gen} | 最高:${this.bestScore}`;
+    },
+    simShot(bot, ang) {
+        const spd = Game.config.bulletSpeed*1.6, ws = Game.walls, hr = Game.config.tankRadius+5;
+        let bx = bot.x+Math.cos(ang)*(hr+2), by = bot.y+Math.sin(ang)*(hr+2), vx = Math.cos(ang)*spd, vy = Math.sin(ang)*spd, bnc = 0;
+        for (let w of ws) if (Game.circleRect(bx,by,4,w.x,w.y,w.w,w.h)) return -1;
+        for (let s=0; s<65; s++) {
+            bx += vx; for (let w of ws) if (Game.circleRect(bx,by,4,w.x,w.y,w.w,w.h)) { bx-=vx; vx=-vx; bnc++; break; }
+            by += vy; for (let w of ws) if (Game.circleRect(bx,by,4,w.x,w.y,w.w,w.h)) { by-=vy; vy=-vy; bnc++; break; }
+            if (bnc > Game.config.bulletMaxBounces) break;
+            if ((bnc>0||s>5) && Game.dist(bx,by,bot.x,bot.y) < hr+10) return -1;
+            for (let o of this.bots) if (!o.dead && o.id!==bot.id && Game.dist(bx,by,o.x,o.y) < hr) return 1;
+            const p = Game.player;
+            if (!p.dead && !this.spectate && Game.dist(bx,by,p.x,p.y) < hr) return 1;
+        }
+        return 0;
+    },
+    step() {
+        this.ticks++;
+        const r = Game.config.tankRadius, alive = this.bots.filter(b=>!b.dead);
+        const p = Game.player, pAct = !p.dead && !this.spectate;
+        if (this.mode === 'LAB_KOTH') {
+            this.koth.matchTicks++;
+            if (this.koth.matchTicks > 720 && alive.length >= 2) {
+                const ar = Game.arena, cx = Game.width/2, cy = ar.topY + ar.ah/2;
+                const d0 = Game.dist(alive[0].x,alive[0].y,cx,cy), d1 = Game.dist(alive[1].x,alive[1].y,cx,cy);
+                const loser = d0 > d1 ? alive[0] : alive[1], winner = d0 > d1 ? alive[1] : alive[0];
+                loser.dead = true; winner.streak++; this.nextArenaBout(winner.idx); return;
+            }
+        } else if (this.mode === 'BG_DEMO' && (alive.length <= 1 || this.ticks > 900)) {
+            this.spawnLabGen(); return;
+        }
+
+        for (let bot of alive) {
+            bot.ticks++; if (++bot.ammoT>60 && bot.ammo<3) { bot.ammo++; bot.ammoT=0; }
+            if (bot.cd>0) bot.cd--;
+            let tgt = null, minD = 9999;
+            for (let o of alive) if (o.id!==bot.id) { const d = Game.dist(bot.x,bot.y,o.x,o.y); if(d<minD){minD=d; tgt=o;} }
+            if (pAct) { const dp = Game.dist(bot.x,bot.y,p.x,p.y); if(dp<minD){minD=dp; tgt=p;} }
+            let mx = 0, my = 0, nearWalls = 0;
+            for (let b of Game.bullets) {
+                const dx = bot.x-b.x, dy = bot.y-b.y, d = Math.hypot(dx,dy);
+                if (d < 175) {
+                    const bs = Math.hypot(b.vx,b.vy)||1, ux = b.vx/bs, uy = b.vy/bs, proj = dx*ux+dy*uy;
+                    if (proj>-10 && proj<155 && Math.abs(dx*(-uy)+dy*ux) < r+28) {
+                        const side = (dx*(-uy)+dy*ux)>=0 ? 1 : -1, bWeight = b.bounces > 0 ? bot.dna.bncW : 1;
+                        const f = ((175-d)/175) * bot.dna.dodge * bWeight * 4;
+                        mx += (-uy)*side*f; my += ux*side*f; if (d<42) bot.dodged += 0.08;
+                    }
+                }
+            }
+            for (let w of Game.walls) {
+                const cx = Math.max(w.x,Math.min(bot.x,w.x+w.w)), cy = Math.max(w.y,Math.min(bot.y,w.y+w.h)), dw = Game.dist(bot.x,bot.y,cx,cy);
+                if (dw < r+22 && dw > 0.1) { nearWalls++; const rp = ((r+22-dw)/22)*bot.dna.wall*1.8; mx += ((bot.x-cx)/dw)*rp; my += ((bot.y-cy)/dw)*rp; }
+            }
+            if (nearWalls >= 2) {
+                const ar = Game.arena, angC = Math.atan2((ar.topY+ar.ah/2)-bot.y, (Game.width/2)-bot.x);
+                mx += Math.cos(angC)*bot.dna.cor*2; my += Math.sin(angC)*bot.dna.cor*2;
+            }
+            if (tgt) {
+                const a = Math.atan2(tgt.y-bot.y, tgt.x-bot.x);
+                if (Math.random() < bot.dna.freq) bot.dir *= -1;
+                if (minD > bot.dna.dist+30) { mx += Math.cos(a)*.75; my += Math.sin(a)*.75; }
+                else if (minD < bot.dna.dist-25) { mx -= Math.cos(a)*.85; my -= Math.sin(a)*.85; }
+                mx += Math.cos(a+1.57*bot.dir)*.75; my += Math.sin(a+1.57*bot.dir)*.75;
+            }
+            const mag = Math.hypot(mx,my);
+            if (mag > 0.05) {
+                const s = Game.config.tankSpeed*0.88, vx = (mx/mag)*s, vy = (my/mag)*s;
+                bot.bodyAngle = Math.atan2(vy,vx); bot.lvx = vx; bot.lvy = vy;
+                bot.x += vx; for (let w of Game.walls) if (Game.circleRect(bot.x,bot.y,r,w.x,w.y,w.w,w.h)){bot.x-=vx; bot.dir*=-1; break;}
+                bot.y += vy; for (let w of Game.walls) if (Game.circleRect(bot.x,bot.y,r,w.x,w.y,w.w,w.h)){bot.y-=vy; bot.dir*=-1; break;}
+            }
+            if (tgt && bot.ammo>0 && bot.cd<=0) {
+                const ft = minD/Game.config.bulletSpeed, da = Math.atan2((tgt.y+(tgt.lvy||0)*ft*bot.dna.lead)-bot.y, (tgt.x+(tgt.lvx||0)*ft*bot.dna.lead)-bot.x);
+                let fa = null;
+                if (Math.random() > bot.dna.amb && this.simShot(bot,da) > 0) fa = da;
+                if (fa===null) for (let k=0; k<bot.dna.iq; k++) { const ta = Math.random()*6.28-3.14; if(this.simShot(bot,ta)>0){fa=ta; break;} }
+                if (fa===null && this.simShot(bot,da) > 0) fa = da;
+                if (fa!==null) {
+                    bot.turretAngle=fa; bot.ammo--; bot.shots++; bot.cd = Math.round(30 * bot.dna.pat);
+                    Game.spawnBullet(bot.x,bot.y,fa,bot.id,bot.color);
+                } else bot.turretAngle = da;
+            }
+            for (let i=Game.bullets.length-1; i>=0; i--) {
+                let b = Game.bullets[i];
+                if (((b.owner!==bot.id)||(b.bounces>0&&b.stepsAlive>8)||(b.stepsAlive>20)) && Game.dist(bot.x,bot.y,b.x,b.y) < r+b.radius) {
+                    Game.bullets.splice(i,1); Game.spawnExplosion(bot.x,bot.y,bot.color);
+                    bot.dead = true; this.onEntityKilled(b.owner, bot.id); break;
+                }
+            }
+        }
+    },
+    onEntityKilled(kId, vId) {
+        if (this.mode === 'DUEL') {
+            if (vId === 'player') this.aiWins++; else this.pWins++;
+            this.save();
+            App.updateDuelHeader();
+            setTimeout(() => { if (!Game.inMenu && this.mode === 'DUEL') App.spawnBossRound(); }, 1000);
+            return;
+        }
+        const k = this.bots.find(b => b.id===kId), v = this.bots.find(b => b.id===vId);
+        if (k && kId!==vId) { k.kills++; k.streak = (k.streak||0) + 1; }
+        if (v && kId===vId) v.suicides++;
+        if (this.mode === 'LAB_KOTH' && v) {
+            const winIdx = (v.idx === this.koth.king) ? this.koth.chal : this.koth.king;
+            this.nextArenaBout(winIdx);
+        }
+    }
+};
+
+/**
+ * ====================================================================
+ * 极简界面控制器
+ * ====================================================================
+ */
+const App = {
+    goHome() {
+        Game.inMenu = true; AI.spectate = true; AI.speed = 1; AI.mode = 'BG_DEMO';
+        document.getElementById('home-screen').style.display = 'flex';
+        document.getElementById('hud-top').style.display = 'none';
+        document.getElementById('touch-controls').style.display = 'none';
+        Game.initMap(); AI.spawnLabGen();
+    },
+    startChallenge() {
+        Game.inMenu = false; AI.spectate = false; AI.speed = 1; AI.mode = 'DUEL';
+        document.getElementById('home-screen').style.display = 'none';
+        document.getElementById('hud-top').style.display = 'flex';
+        document.getElementById('touch-controls').style.display = 'block';
+        document.getElementById('hud-btns').innerHTML = `
+            <button class="btn-small" style="background:#cba6f7;color:#11111b;" onclick="App.switchMap()">🗺️ 换图</button>
+            <button class="btn-small" onclick="App.goHome()">🏠 返回</button>`;
+        Game.initMap();
+        this.spawnBossRound();
+    },
+    spawnBossRound() {
+        Game.bullets = []; AI.ticks = 0;
+        const spP = Game.getSafeSpawn(false), p = Game.player;
+        p.dead = false; p.x = spP.x; p.y = spP.y; p.ammo = p.maxAmmo;
+        const spA = Game.getSafeSpawn(true);
+        const cfg = window.SERVER_CONFIG;
+        AI.bots = [{
+            id: 'ai_boss', idx: 0, name: cfg.bossName, color: '#f38ba8', isElite: true,
+            dna: AI.fixDNA(cfg.bossDNA), x: spA.x, y: spA.y, bodyAngle: 1.57, turretAngle: 1.57,
+            dead: false, ammo: 3, maxAmmo: 3, ammoT: 0, cd: 30, kills: AI.aiWins, streak: 0, shots: 0, suicides: 0, dodged: 0, ticks: 0, dir: 1
+        }];
+        this.updateDuelHeader();
+    },
+    updateDuelHeader() {
+        document.getElementById('hud-title').innerText = `🥊 你 ${AI.pWins} : ${AI.aiWins} ${window.SERVER_CONFIG.bossName}`;
+    },
+    switchMap() {
+        Game.mapIndex++; Game.initMap();
+        if (AI.mode === 'DUEL') this.spawnBossRound(); else AI.spawnLabGen();
+    },
+    // 仅供站长从GM后台进入的私密300x炼蛊室
+    startSecretLab() {
+        Game.inMenu = false; AI.spectate = true; AI.speed = 100; AI.mode = 'LAB_KOTH';
+        document.getElementById('home-screen').style.display = 'none';
+        document.getElementById('hud-top').style.display = 'flex';
+        document.getElementById('touch-controls').style.display = 'none';
+        document.getElementById('hud-title').innerText = `🔬 炼蛊 G${AI.gen} | 最高:${AI.bestScore}`;
+        document.getElementById('hud-btns').innerHTML = `
+            <button class="btn-small" style="background:#f38ba8;color:#11111b;" onclick="AI.speed=AI.speed===1?100:(AI.speed===100?300:1);this.innerText='⚡'+AI.speed+'x'">⚡100x</button>
+            <button class="btn-small" style="background:#a6e3a1;color:#11111b;" onclick="Admin.open()">🛠️ 存为BOSS</button>
+            <button class="btn-small" onclick="App.goHome()">🏠 退出</button>`;
+        Game.initMap(); AI.spawnLabGen();
+    }
+};
+
+const TouchCtrl = {
+    joyId: null, aimId: null, isAiming: false, center: { x: 0, y: 0 }, maxR: 46,
+    init() {
+        const zone = document.getElementById('joystick-zone'), knob = document.getElementById('joystick-knob'), fire = document.getElementById('fire-btn');
+        zone.addEventListener('touchstart', e => {
+            e.preventDefault(); const t = e.changedTouches[0]; this.joyId = t.identifier;
+            const r = zone.getBoundingClientRect(); this.center = { x: r.left + r.width/2, y: r.top + r.height/2 };
+            this.moveJoy(t.clientX, t.clientY, knob);
+        }, { passive: false });
+        zone.addEventListener('touchmove', e => {
+            e.preventDefault();
+            for (let t of e.changedTouches) if (t.identifier === this.joyId) this.moveJoy(t.clientX, t.clientY, knob);
+        }, { passive: false });
+        const endJoy = e => {
+            for (let t of e.changedTouches) if (t.identifier === this.joyId) {
+                this.joyId = null; Game.inputs.moveX = 0; Game.inputs.moveY = 0; knob.style.transform = `translate(0px,0px)`;
+            }
+        };
+        zone.addEventListener('touchend', endJoy); zone.addEventListener('touchcancel', endJoy);
+        fire.addEventListener('touchstart', e => { e.preventDefault(); Game.inputs.isFiring = true; Game.shoot(); }, { passive: false });
+        const endFire = e => { e.preventDefault(); Game.inputs.isFiring = false; };
+        fire.addEventListener('touchend', endFire); fire.addEventListener('touchcancel', endFire);
+
+        canvas.addEventListener('touchstart', e => {
+            if (Game.inMenu || AI.spectate) return;
+            e.preventDefault(); const t = e.changedTouches[0]; this.aimId = t.identifier; this.isAiming = true;
+            Game.player.turretAngle = Math.atan2(t.clientY - Game.player.y, t.clientX - Game.player.x);
+            Game.inputs.isFiring = true; Game.shoot();
+        }, { passive: false });
+        canvas.addEventListener('touchmove', e => {
+            if (Game.inMenu || AI.spectate) return;
+            e.preventDefault();
+            for (let t of e.changedTouches) if (t.identifier === this.aimId) {
+                Game.player.turretAngle = Math.atan2(t.clientY - Game.player.y, t.clientX - Game.player.x);
+            }
+        }, { passive: false });
+        const endAim = e => {
+            for (let t of e.changedTouches) if (t.identifier === this.aimId) { this.aimId = null; this.isAiming = false; Game.inputs.isFiring = false; }
+        };
+        canvas.addEventListener('touchend', endAim); canvas.addEventListener('touchcancel', endAim);
+
+        window.addEventListener('keydown', e => Game.inputs.keys[e.code] = true);
+        window.addEventListener('keyup', e => Game.inputs.keys[e.code] = false);
+        canvas.addEventListener('mousemove', e => {
+            if (!Game.inMenu && !AI.spectate) { this.isAiming = true; Game.player.turretAngle = Math.atan2(e.clientY - Game.player.y, e.clientX - Game.player.x); }
+        });
+        canvas.addEventListener('mousedown', () => { if(!Game.inMenu) Game.inputs.isFiring = true; });
+        window.addEventListener('mouseup', () => Game.inputs.isFiring = false);
+    },
+    moveJoy(cx, cy, knob) {
+        let dx = cx - this.center.x, dy = cy - this.center.y;
+        const d = Math.hypot(dx, dy);
+        if (d > this.maxR) { dx = (dx/d)*this.maxR; dy = (dy/d)*this.maxR; }
+        knob.style.transform = `translate(${dx}px, ${dy}px)`;
+        Game.inputs.moveX = dx / this.maxR; Game.inputs.moveY = dy / this.maxR;
+    }
+};
+
+function mainLoop() {
+    if (!Game.paused) {
+        const startT = performance.now();
+        for (let s = 0; s < AI.speed; s++) {
+            Game.updatePlayer(); Game.updateBullets(); AI.step();
+            if (performance.now() - startT > 14) break;
+        }
+        Game.render();
+    }
+    requestAnimationFrame(mainLoop);
+}
+
+window.addEventListener('resize', () => Game.initMap());
+AI.init();
+TouchCtrl.init();
+App.goHome();
+requestAnimationFrame(mainLoop);
+</script>
+</body>
+</html>
