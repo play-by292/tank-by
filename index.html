@@ -87,20 +87,20 @@
         #joystick-knob { position: absolute; top: 50%; left: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; background: rgba(137,180,250,0.9); box-shadow: 0 0 12px rgba(137,180,250,0.6); }
         #fire-btn { position: absolute; bottom: 24px; right: 24px; width: 110px; height: 110px; border-radius: 50%; background: radial-gradient(circle, rgba(243,139,168,0.92), rgba(235,160,172,0.65)); border: 3px solid rgba(255,255,255,0.4); color: #11111b; font-size: 14px; font-weight: 900; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; }
 
-        /* ==================== 3. 全屏固定头弹窗系统 ==================== */
+        /* ==================== 3. 全屏弹窗系统 (修复NO.1遮挡问题) ==================== */
         .modal {
-            position: fixed; inset: 0; background: rgba(13, 14, 23, 0.98); z-index: 120;
-            display: none; flex-direction: column; overflow: hidden;
+            position: fixed; inset: 0; background: #0d0e17; z-index: 120;
+            display: none; flex-direction: column; width: 100%; height: 100%;
         }
         .modal-header {
-            padding: 12px 14px; background: #11111b; border-bottom: 1px solid #313244;
-            flex-shrink: 0; z-index: 2;
+            padding: 12px 14px; background: #141521; border-bottom: 1.5px solid #313244;
+            flex-shrink: 0; width: 100%;
         }
         .modal-body {
             flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y;
-            padding: 12px 14px 50px 14px;
+            padding: 14px 14px 65px 14px; width: 100%;
         }
-        .card { background: #1e1e2e; border: 1px solid #45475a; border-radius: 11px; padding: 10px 12px; margin-bottom: 9px; font-size: 12px; }
+        .card { background: #1e1e2e; border: 1px solid #45475a; border-radius: 11px; padding: 11px 12px; margin-bottom: 10px; font-size: 12px; }
         .inp { width: 100%; padding: 7px 10px; background: #11111b; border: 1px solid #45475a; color: #fff; border-radius: 6px; font-size: 12.5px; margin-bottom: 6px; user-select: text; -webkit-user-select: text; }
     </style>
 </head>
@@ -201,7 +201,7 @@
 <script>
 /**
  * ====================================================================
- * 1. 全局配置与 16 维超神基因定义 (已绑定站长专属 npoint 云端)
+ * 1. 全局配置与 16 维超神基因定义
  * ====================================================================
  */
 window.SERVER_CONFIG = window.SERVER_CONFIG || {
@@ -211,11 +211,14 @@ window.SERVER_CONFIG = window.SERVER_CONFIG || {
     bulletSpeed: 4.4,
     maxBounces: 5,
     maxAmmo: 3,
-    // 主节点：你刚刚创建的专属 npoint 云端接口（全球 Cloudflare CDN 加速）
+    // 主节点：站长专属 npoint 云端接口
     cloudApiUrl: 'https://api.npoint.io/55fa615e9b8474d58c5c',
-    // 备用节点：自动合并找回以前上传过的旧数据
-    backupApiUrl: 'https://kvdb.io/A6p8Vv9xZ2kL5mN8qR3wT1/tank_ai_16d_v2',
-    legacyApiUrl: 'https://kvdb.io/A6p8Vv9xZ2kL5mN8qR3wT1/tank_ai_global_leaderboard_v1'
+    // 国内免翻墙 CDN 加速代理通道（当玩家国内4G直连受阻时自动启用）
+    proxyUrls: [
+        'https://api.npoint.io/55fa615e9b8474d58c5c',
+        'https://corsproxy.io/?' + encodeURIComponent('https://api.npoint.io/55fa615e9b8474d58c5c'),
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://api.npoint.io/55fa615e9b8474d58c5c')
+    ]
 };
 
 const DNA_SPEC = [
@@ -251,12 +254,26 @@ const ctx = canvas.getContext('2d');
 
 /**
  * ====================================================================
- * 2. 三路并发云端天梯 & 跨浏览器整榜迁移系统 (Cloud)
+ * 2. 独立超时多线竞速云端引擎 (彻底修复国内4G被慢节点拖死的问题)
  * ====================================================================
  */
+// 单个请求独立超时器，绝不互相拖累
+async function fetchWithTimeout(url, options = {}, timeoutMs = 6000) {
+    const ctrl = new AbortController();
+    const id = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+        const res = await fetch(url, { ...options, signal: ctrl.signal });
+        clearTimeout(id);
+        return res;
+    } catch (e) {
+        clearTimeout(id);
+        throw e;
+    }
+}
+
 const Cloud = {
     list: [],
-    syncStatus: '正在连接全服云端...',
+    syncStatus: '🔄 正在连接全服云端...',
 
     init() {
         let merged = [...DEFAULT_LADDER];
@@ -315,61 +332,62 @@ const Cloud = {
         `).join('');
     },
 
-    // 三路云端并发同步：优先使用你的 npoint 专属云端，并自动将旧节点数据同步进新节点！
     async syncCloud(pushNow = false) {
         const dot = document.getElementById('net-dot');
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 4500);
-        const cfg = window.SERVER_CONFIG;
-        try {
-            const countBefore = this.list.length;
-            // 1. 先并发拉取主节点与历史节点，确保多玩家数据合并，绝不互相覆盖！
-            const urls = [cfg.cloudApiUrl, cfg.backupApiUrl, cfg.legacyApiUrl].filter(Boolean);
-            const results = await Promise.allSettled(urls.map(u => fetch(u, { method: 'GET', cache: 'no-store', signal: ctrl.signal })));
-            let anyReadOk = false;
-            let npointCount = 0;
+        const mainUrl = 'https://api.npoint.io/55fa615e9b8474d58c5c';
+        const readUrls = [
+            mainUrl + '?t=' + Date.now(),
+            'https://corsproxy.io/?' + encodeURIComponent(mainUrl),
+            'https://api.allorigins.win/raw?url=' + encodeURIComponent(mainUrl)
+        ];
 
-            for (let i = 0; i < results.length; i++) {
-                const r = results[i];
-                if (r.status === 'fulfilled' && r.value.ok) {
-                    const data = await r.value.json();
+        let connected = false;
+        let remoteCount = 0;
+
+        // 1. 多线竞速读取：只要国内4G能连上任意一条线路，立刻成功返回！
+        for (let url of readUrls) {
+            try {
+                const res = await fetchWithTimeout(url, { method: 'GET' }, 5500);
+                if (res.ok) {
+                    const data = await res.json();
                     if (Array.isArray(data) && data.length) {
-                        if (i === 0) npointCount = data.length;
+                        remoteCount = data.length;
                         this.mergeIntoList(data);
-                        anyReadOk = true;
+                        connected = true;
+                        break; // 读到最新云端数据后立即停止后续冗余请求
                     }
                 }
-            }
-            this.sortAndApplyTopBoss();
+            } catch (e) {}
+        }
 
-            // 2. 如果是玩家主动上传，或者发现本地/旧云端有更多AI尚未同步进 npoint 主节点，立即自动回写主节点！
-            if (pushNow || (anyReadOk && this.list.length > npointCount)) {
-                const writeReqs = [
-                    fetch(cfg.cloudApiUrl, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(this.list), signal: ctrl.signal
-                    })
-                ];
-                if (cfg.backupApiUrl) {
-                    writeReqs.push(fetch(cfg.backupApiUrl, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(this.list), signal: ctrl.signal
-                    }));
-                }
-                const wRes = await Promise.allSettled(writeReqs);
-                if (wRes.some(w => w.status === 'fulfilled' && w.value.ok)) anyReadOk = true;
-            }
+        this.sortAndApplyTopBoss();
 
-            if (!anyReadOk) throw new Error('Unreachable');
+        // 2. 如果需要上传数据，或者本地有比云端更新的AI，尝试多线路写入
+        if (pushNow || (connected && this.list.length > remoteCount)) {
+            const writeUrls = [
+                mainUrl,
+                'https://corsproxy.io/?' + encodeURIComponent(mainUrl)
+            ];
+            for (let wUrl of writeUrls) {
+                try {
+                    const wRes = await fetchWithTimeout(wUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.list)
+                    }, 6000);
+                    if (wRes.ok) { connected = true; break; }
+                } catch (e) {}
+            }
+        }
+
+        if (connected) {
             this.syncStatus = '🟢 全服云端天梯实时互通已连接';
             if (dot) dot.style.background = '#a6e3a1';
-        } catch (e) {
-            this.syncStatus = '🟡 极速离线/迁移码模式';
+        } else {
+            this.syncStatus = '🟡 极速离线/基因码互通模式';
             if (dot) dot.style.background = '#f9e2af';
-        } finally {
-            clearTimeout(timer);
-            this.sortAndApplyTopBoss();
         }
+        this.sortAndApplyTopBoss();
     },
 
     async uploadMyAI(customBot) {
@@ -711,7 +729,6 @@ const AI = {
             const adm = JSON.parse(localStorage.getItem('TANK_ADM_V2'));
             if (adm) {
                 Object.assign(window.SERVER_CONFIG, adm);
-                // 强制确保主节点升级为站长最新的 npoint 接口
                 if (window.SERVER_CONFIG.cloudApiUrl.includes('kvdb.io')) {
                     window.SERVER_CONFIG.cloudApiUrl = 'https://api.npoint.io/55fa615e9b8474d58c5c';
                 }
@@ -1190,7 +1207,6 @@ const TouchCtrl = {
     }
 };
 
-// 恒定 60FPS 物理时钟累加器 (彻底解决 120Hz 高刷屏浏览器加速 Bug)
 let lastFrameTime = performance.now();
 let timeAccumulator = 0;
 const STEP_MS = 1000 / 60;
