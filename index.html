@@ -9,10 +9,10 @@
         body, html { width: 100%; height: 100%; overflow: hidden; background: #0d0e17; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #cdd6f4; touch-action: none; }
         #gameCanvas { display: block; width: 100%; height: 100%; background: #181825; }
 
-        /* ==================== 1. 全新赛博电竞主界面 ==================== */
+        /* ==================== 1. 赛博电竞主界面 ==================== */
         #home-screen {
             position: fixed; inset: 0; z-index: 100;
-            background: radial-gradient(circle at 50% 25%, rgba(30, 30, 46, 0.82), rgba(11, 11, 19, 0.96));
+            background: radial-gradient(circle at 50% 25%, rgba(30, 30, 46, 0.85), rgba(11, 11, 19, 0.97));
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 14px; backdrop-filter: blur(7px); overflow-y: auto;
         }
@@ -21,15 +21,14 @@
             background: rgba(166, 227, 161, 0.12); border: 1px solid rgba(166, 227, 161, 0.35);
             color: #a6e3a1; padding: 5px 14px; border-radius: 20px; font-size: 11.5px; font-weight: bold; margin-bottom: 8px;
         }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #a6e3a1; box-shadow: 0 0 8px #a6e3a1; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #a6e3a1; box-shadow: 0 0 8px #a6e3a1; flex-shrink: 0; }
         .game-logo {
             font-size: 29px; font-weight: 900; letter-spacing: 1px; cursor: pointer;
             background: linear-gradient(135deg, #89b4fa, #cba6f7, #f38ba8);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
-        .game-sub { font-size: 11.5px; color: #9399b2; margin: 2px 0 12px 0; }
+        .game-sub { font-size: 11.5px; color: #9399b2; margin: 2px 0 10px 0; }
 
-        /* 殿堂第1名大魔王展台 */
         .boss-card {
             width: 100%; max-width: 355px;
             background: linear-gradient(160deg, rgba(36, 39, 58, 0.95), rgba(20, 21, 33, 0.98));
@@ -43,7 +42,6 @@
         .boss-name { font-size: 20px; font-weight: 900; color: #f9e2af; }
         .boss-author { font-size: 11px; color: #89b4fa; }
 
-        /* 16维核心战力六宫格浓缩展示 */
         .dna-grid {
             display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;
             background: rgba(13, 14, 23, 0.65); padding: 7px; border-radius: 10px; font-size: 11px; margin-bottom: 8px;
@@ -51,7 +49,6 @@
         .dna-cell { color: #a6adc8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .dna-cell b { color: #89dceb; }
 
-        /* 天梯前三甲微缩预览条 */
         .mini-ladder {
             background: rgba(17, 17, 27, 0.7); border-radius: 8px; padding: 6px 8px;
             font-size: 11px; margin-bottom: 8px; border: 1px solid #313244;
@@ -61,7 +58,6 @@
         .stat-bar { display: flex; justify-content: space-around; border-top: 1px solid #313244; padding-top: 8px; font-size: 11.5px; color: #a6adc8; text-align: center; }
         .stat-bar b { font-size: 14px; display: block; margin-top: 1px; }
 
-        /* 主按钮组 */
         .btn-group { width: 100%; max-width: 355px; display: flex; flex-direction: column; gap: 8px; }
         .btn-main {
             width: 100%; padding: 13px; border: none; border-radius: 13px;
@@ -82,7 +78,7 @@
         }
         .hud-r1 { display: flex; justify-content: space-between; align-items: center; }
         #hud-title { font-size: 13px; font-weight: 900; color: #f9e2af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .btn-sm { background: #313244; color: #cdd6f4; border: 1px solid #45475a; padding: 4px 10px; border-radius: 7px; font-size: 11.5px; font-weight: bold; }
+        .btn-sm { background: #313244; color: #cdd6f4; border: 1px solid #45475a; padding: 5px 11px; border-radius: 7px; font-size: 11.5px; font-weight: bold; flex-shrink: 0; }
         .hud-r2 { display: flex; gap: 5px; }
         .hud-btn { flex: 1; padding: 6px 2px; border: none; border-radius: 7px; font-weight: bold; font-size: 11.5px; color: #11111b; text-align: center; }
 
@@ -91,13 +87,20 @@
         #joystick-knob { position: absolute; top: 50%; left: 50%; width: 48px; height: 48px; margin: -24px 0 0 -24px; border-radius: 50%; background: rgba(137,180,250,0.9); box-shadow: 0 0 12px rgba(137,180,250,0.6); }
         #fire-btn { position: absolute; bottom: 24px; right: 24px; width: 110px; height: 110px; border-radius: 50%; background: radial-gradient(circle, rgba(243,139,168,0.92), rgba(235,160,172,0.65)); border: 3px solid rgba(255,255,255,0.4); color: #11111b; font-size: 14px; font-weight: 900; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: auto; }
 
-        /* ==================== 3. 弹窗系统 ==================== */
+        /* ==================== 3. 全屏固定头弹窗系统 ==================== */
         .modal {
             position: fixed; inset: 0; background: rgba(13, 14, 23, 0.98); z-index: 120;
-            display: none; flex-direction: column; padding: 14px 14px 40px 14px;
-            overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y;
+            display: none; flex-direction: column; overflow: hidden;
         }
-        .card { background: #1e1e2e; border: 1px solid #45475a; border-radius: 11px; padding: 10px 12px; margin-bottom: 8px; font-size: 12px; flex-shrink: 0; }
+        .modal-header {
+            padding: 12px 14px; background: #11111b; border-bottom: 1px solid #313244;
+            flex-shrink: 0; z-index: 2;
+        }
+        .modal-body {
+            flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-y;
+            padding: 12px 14px 50px 14px;
+        }
+        .card { background: #1e1e2e; border: 1px solid #45475a; border-radius: 11px; padding: 10px 12px; margin-bottom: 9px; font-size: 12px; }
         .inp { width: 100%; padding: 7px 10px; background: #11111b; border: 1px solid #45475a; color: #fff; border-radius: 6px; font-size: 12.5px; margin-bottom: 6px; user-select: text; -webkit-user-select: text; }
     </style>
 </head>
@@ -110,9 +113,8 @@
             <span id="notice-bar">🔥 天梯榜首自动成为全服守关大BOSS！支持16维极限炼蛊！</span>
         </div>
         <div class="game-logo" onclick="Admin.clickLogo()">⚡ 几何坦克：AI觉醒</div>
-        <div class="game-sub">16维超神神经网络 · 天梯第1名自动接管全服大魔王</div>
+        <div class="game-sub">恒定60帧物理锁 · 16维超神神经网络 · 夺榜自动接管大魔王</div>
 
-        <!-- 天梯Top1 = 守关大魔王卡片 -->
         <div class="boss-card">
             <div class="boss-header">
                 <span class="crown-tag">👑 全服天梯 NO.1 · 守关大魔王</span>
@@ -123,17 +125,14 @@
                 <div class="boss-author" id="home-boss-author">培育者: 官方殿堂</div>
             </div>
 
-            <!-- 16维基因核心展示 -->
             <div class="dna-grid" id="home-dna-grid"></div>
-
-            <!-- 全服天梯前三甲实时微缩榜 -->
             <div class="mini-ladder" id="home-mini-ladder"></div>
 
             <div class="stat-bar">
                 <div>你的胜场<b id="rec-p" style="color:#a6e3a1;">0</b></div>
                 <div>魔王胜场<b id="rec-ai" style="color:#f38ba8;">0</b></div>
                 <div>你的AI代数<b id="rec-gen" style="color:#89b4fa;">G1</b></div>
-                <div>你的最高战力<b id="rec-fit" style="color:#f9e2af;">100</b></div>
+                <div>你的最高战力<b id="rec-fit" style="color:#f9e2af;">150</b></div>
             </div>
         </div>
 
@@ -165,43 +164,44 @@
         <div id="fire-btn"><span>🔥</span><span style="font-size:11px;">点屏或按住</span></div>
     </div>
 
-    <!-- ==================== 3. 天梯与实验室基因库弹窗 ==================== -->
+    <!-- ==================== 3. 天梯与跨浏览器同步弹窗 ==================== -->
     <div id="cloud-modal" class="modal"></div>
 
-    <!-- ==================== 4. 站长 GM 后台 (连点5下主标题开启) ==================== -->
+    <!-- ==================== 4. 站长 GM 后台 ==================== -->
     <div id="admin-modal" class="modal">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;border-bottom:1px solid #313244;padding-bottom:8px;">
+        <div class="modal-header" style="display:flex;justify-content:space-between;align-items:center;">
             <b style="font-size:16px;color:#f38ba8;">🛠️ 站长 GM 终极后台</b>
             <button onclick="document.getElementById('admin-modal').style.display='none'" class="btn-sm">关闭 ✖</button>
         </div>
-        <div class="card">
-            <div style="color:#89b4fa;font-weight:bold;margin-bottom:4px;">📢 顶部公告与密码：</div>
-            <input id="adm-notice" class="inp" placeholder="顶部横幅公告">
-            <div style="display:flex;gap:8px;">
-                <input id="adm-pin" class="inp" placeholder="后台密码" style="flex:1;">
-                <input id="adm-api" class="inp" placeholder="可选：自定义云端JSON接口地址" style="flex:2;">
+        <div class="modal-body">
+            <div class="card">
+                <div style="color:#89b4fa;font-weight:bold;margin-bottom:4px;">📢 顶部公告与密码：</div>
+                <input id="adm-notice" class="inp" placeholder="顶部横幅公告">
+                <div style="display:flex;gap:8px;">
+                    <input id="adm-pin" class="inp" placeholder="后台密码" style="flex:1;">
+                    <input id="adm-api" class="inp" placeholder="主云端接口地址" style="flex:2;">
+                </div>
             </div>
-            <div style="font-size:11px;color:#a6adc8;">💡 提示：无服务器也可正常使用！系统内置防卡死秒开架构 + 基因码跨服导入导出；若填入 JSONBin / GitHub Gist 接口即可开启全球实时自动同步。</div>
-        </div>
-        <div class="card">
-            <div style="color:#89b4fa;font-weight:bold;margin-bottom:4px;">⚙️ 全局物理引擎参数：</div>
-            <div style="display:flex;gap:6px;font-size:11.5px;">
-                <div style="flex:1;">坦克移速<input type="number" step="0.1" id="adm-tspd" class="inp"></div>
-                <div style="flex:1;">子弹速度<input type="number" step="0.1" id="adm-bspd" class="inp"></div>
-                <div style="flex:1;">最大反弹<input type="number" id="adm-bnc" class="inp"></div>
-                <div style="flex:1;">弹夹上限<input type="number" id="adm-ammo" class="inp"></div>
+            <div class="card">
+                <div style="color:#89b4fa;font-weight:bold;margin-bottom:4px;">⚙️ 全局物理引擎参数 (60FPS基准)：</div>
+                <div style="display:flex;gap:6px;font-size:11.5px;">
+                    <div style="flex:1;">坦克移速<input type="number" step="0.1" id="adm-tspd" class="inp"></div>
+                    <div style="flex:1;">子弹速度<input type="number" step="0.1" id="adm-bspd" class="inp"></div>
+                    <div style="flex:1;">最大反弹<input type="number" id="adm-bnc" class="inp"></div>
+                    <div style="flex:1;">弹夹上限<input type="number" id="adm-ammo" class="inp"></div>
+                </div>
             </div>
-        </div>
-        <div style="display:flex;gap:8px;margin-top:6px;">
-            <button onclick="Admin.save()" style="flex:1;padding:12px;background:#a6e3a1;border:none;border-radius:8px;font-weight:900;">💾 保存配置</button>
-            <button onclick="Admin.exportHTML()" style="flex:1;padding:12px;background:#89b4fa;border:none;border-radius:8px;font-weight:900;">📥 导出新HTML包</button>
+            <div style="display:flex;gap:8px;margin-top:6px;">
+                <button onclick="Admin.save()" style="flex:1;padding:12px;background:#a6e3a1;border:none;border-radius:8px;font-weight:900;">💾 保存配置</button>
+                <button onclick="Admin.exportHTML()" style="flex:1;padding:12px;background:#89b4fa;border:none;border-radius:8px;font-weight:900;">📥 导出新HTML包</button>
+            </div>
         </div>
     </div>
 
 <script>
 /**
  * ====================================================================
- * 1. 全局配置与 16 维超神基因定义 (上限极高)
+ * 1. 全局配置与 16 维超神基因定义 (已绑定站长专属 npoint 云端)
  * ====================================================================
  */
 window.SERVER_CONFIG = window.SERVER_CONFIG || {
@@ -211,22 +211,25 @@ window.SERVER_CONFIG = window.SERVER_CONFIG || {
     bulletSpeed: 4.4,
     maxBounces: 5,
     maxAmmo: 3,
-    cloudApiUrl: 'https://kvdb.io/A6p8Vv9xZ2kL5mN8qR3wT1/tank_ai_16d_v2'
+    // 主节点：你刚刚创建的专属 npoint 云端接口（全球 Cloudflare CDN 加速）
+    cloudApiUrl: 'https://api.npoint.io/55fa615e9b8474d58c5c',
+    // 备用节点：自动合并找回以前上传过的旧数据
+    backupApiUrl: 'https://kvdb.io/A6p8Vv9xZ2kL5mN8qR3wT1/tank_ai_16d_v2',
+    legacyApiUrl: 'https://kvdb.io/A6p8Vv9xZ2kL5mN8qR3wT1/tank_ai_global_leaderboard_v1'
 };
 
-// 16维基因元数据：[字段名, 中文名, 最小值, 最大值, 精度]
 const DNA_SPEC = [
     ['dodge',  '⚡闪避神经', 0.8, 5.0, 2],
-    ['matrix', '🔮矩阵预演', 1,   12,  0], // 新增：预测子弹折线反弹轨迹帧数
+    ['matrix', '🔮矩阵预演', 1,   12,  0],
     ['bncW',   '🛡️冷枪警惕', 0.8, 4.2, 2],
-    ['iq',     '📐几何折射', 4,   18,  0], // 升级：最高18道折线蒙特卡洛搜索
+    ['iq',     '📐几何折射', 4,   18,  0],
     ['amb',    '🎯折线阴人', 0.0, 1.0, 2],
     ['lead',   '📏动态预判', 0.0, 1.4, 2],
-    ['supp',   '🔥火力压制', 0.0, 1.0, 2], // 新增：封锁走位射击倾向
-    ['consv',  '🔋弹药精算', 0.0, 1.0, 2], // 新增：留1发保命不乱射概率
-    ['rage',   '💢绝境狂暴', 1.0, 2.2, 2], // 新增：高威胁下移速与神经亢奋度
-    ['peek',   '🧱掩体卡位', 0.2, 2.5, 2], // 新增：利用墙角探头射击权重
-    ['feint',  '🌀假动作率', 0.0, 0.4, 2], // 新增：急停反跑骗子弹概率
+    ['supp',   '🔥火力压制', 0.0, 1.0, 2],
+    ['consv',  '🔋弹药精算', 0.0, 1.0, 2],
+    ['rage',   '💢绝境狂暴', 1.0, 2.2, 2],
+    ['peek',   '🧱掩体卡位', 0.2, 2.5, 2],
+    ['feint',  '🌀假动作率', 0.0, 0.4, 2],
     ['wall',   '🚧防撞斥力', 0.5, 2.8, 2],
     ['cor',    '🧭死角逃逸', 0.5, 3.0, 2],
     ['dist',   '🤺交战距离', 75,  250, 0],
@@ -234,7 +237,6 @@ const DNA_SPEC = [
     ['pat',    '⏳扣扳机欲', 0.4, 1.6, 2]
 ];
 
-// 内置全服传奇天梯榜（带2.5秒超时秒开保障，断网/国内直连也能瞬间加载并挑战抢榜）
 const DEFAULT_LADDER = [
     { id: 'top_1', aiName: '👑零式·矩阵神皇', author: '官方殿堂守关', gen: 5200, fit: 3680, dna: { dodge:3.85, matrix:10, bncW:3.60, iq:16, amb:0.94, lead:0.88, supp:0.75, consv:0.85, rage:1.65, peek:1.85, feint:0.25, wall:1.55, cor:2.10, dist:180, freq:0.055, pat:0.78 } },
     { id: 'top_2', aiName: '⚡九重折线死神', author: '几何学博士', gen: 2890, fit: 3120, dna: { dodge:3.10, matrix:8,  bncW:3.25, iq:18, amb:0.98, lead:0.72, supp:0.60, consv:0.70, rage:1.45, peek:2.10, feint:0.18, wall:1.40, cor:1.80, dist:215, freq:0.042, pat:0.85 } },
@@ -249,31 +251,45 @@ const ctx = canvas.getContext('2d');
 
 /**
  * ====================================================================
- * 2. 永不卡死的云端天梯 & 抢榜夺冠系统 (Cloud)
+ * 2. 三路并发云端天梯 & 跨浏览器整榜迁移系统 (Cloud)
  * ====================================================================
  */
 const Cloud = {
     list: [],
-    syncStatus: '就绪',
+    syncStatus: '正在连接全服云端...',
 
     init() {
-        try {
-            const cached = JSON.parse(localStorage.getItem(LADDER_KEY));
-            if (Array.isArray(cached) && cached.length > 0) this.list = cached;
-        } catch(e) {}
-        if (!this.list.length) this.list = JSON.parse(JSON.stringify(DEFAULT_LADDER));
+        let merged = [...DEFAULT_LADDER];
+        for (let key of [LADDER_KEY, 'TANK_CACHED_CLOUD_LIST']) {
+            try {
+                const arr = JSON.parse(localStorage.getItem(key));
+                if (Array.isArray(arr)) merged.push(...arr);
+            } catch(e) {}
+        }
+        this.mergeIntoList(merged);
         this.sortAndApplyTopBoss();
-        this.syncCloud(false); // 后台静默非阻塞同步
+        this.syncCloud(false);
+    },
+
+    mergeIntoList(items) {
+        const map = new Map();
+        [...this.list, ...items].forEach(it => {
+            if (it && it.aiName && it.dna) {
+                it.dna = AI.fixDNA(it.dna);
+                const key = `${it.aiName.replace(/^👑\s*/, '')}_${it.author}`;
+                if (!map.has(key) || map.get(key).fit < it.fit) map.set(key, it);
+            }
+        });
+        this.list = Array.from(map.values());
     },
 
     getTopBoss() {
         return this.list[0] || DEFAULT_LADDER[0];
     },
 
-    // 核心功能：将天梯第1名直接设为首页守关大魔王！
     sortAndApplyTopBoss() {
         this.list.sort((a, b) => b.fit - a.fit);
-        if (this.list.length > 20) this.list = this.list.slice(0, 20);
+        if (this.list.length > 25) this.list = this.list.slice(0, 25);
         localStorage.setItem(LADDER_KEY, JSON.stringify(this.list));
 
         const top = this.getTopBoss();
@@ -282,7 +298,6 @@ const Cloud = {
         document.getElementById('home-boss-author').innerText = `培育者: ${top.author} (G${top.gen})`;
         document.getElementById('home-boss-fit').innerText = `⚡战力: ${top.fit}`;
 
-        // 渲染16维核心属性浓缩面板
         document.getElementById('home-dna-grid').innerHTML = `
             <div class="dna-cell">⚡闪避: <b>${d.dodge}</b></div>
             <div class="dna-cell">🔮预演: <b>${d.matrix}帧</b></div>
@@ -292,7 +307,6 @@ const Cloud = {
             <div class="dna-cell">🌀假动作: <b>${Math.round(d.feint*100)}%</b></div>
         `;
 
-        // 渲染前三甲微缩榜
         document.getElementById('home-mini-ladder').innerHTML = this.list.slice(0, 3).map((item, i) => `
             <div class="mini-row">
                 <span>${i===0?'🥇':(i===1?'🥈':'🥉')} <b>${item.aiName}</b> <small style="color:#9399b2;">by ${item.author}</small></span>
@@ -301,38 +315,56 @@ const Cloud = {
         `).join('');
     },
 
-    // 带 2.5 秒 AbortController 熔断保护的云端同步，绝不卡死页面！
+    // 三路云端并发同步：优先使用你的 npoint 专属云端，并自动将旧节点数据同步进新节点！
     async syncCloud(pushNow = false) {
         const dot = document.getElementById('net-dot');
         const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 2500); // 2.5秒超时立即熔断
+        const timer = setTimeout(() => ctrl.abort(), 4500);
+        const cfg = window.SERVER_CONFIG;
         try {
-            if (pushNow) {
-                await fetch(window.SERVER_CONFIG.cloudApiUrl, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this.list), signal: ctrl.signal
-                });
-            } else {
-                const res = await fetch(window.SERVER_CONFIG.cloudApiUrl, { method: 'GET', cache: 'no-store', signal: ctrl.signal });
-                if (res.ok) {
-                    const remote = await res.json();
-                    if (Array.isArray(remote) && remote.length > 0) {
-                        // 合并本地与云端高分AI
-                        const map = new Map();
-                        [...this.list, ...remote].forEach(it => {
-                            if (it && it.aiName) {
-                                const key = `${it.aiName}_${it.author}`;
-                                if (!map.has(key) || map.get(key).fit < it.fit) map.set(key, it);
-                            }
-                        });
-                        this.list = Array.from(map.values());
+            const countBefore = this.list.length;
+            // 1. 先并发拉取主节点与历史节点，确保多玩家数据合并，绝不互相覆盖！
+            const urls = [cfg.cloudApiUrl, cfg.backupApiUrl, cfg.legacyApiUrl].filter(Boolean);
+            const results = await Promise.allSettled(urls.map(u => fetch(u, { method: 'GET', cache: 'no-store', signal: ctrl.signal })));
+            let anyReadOk = false;
+            let npointCount = 0;
+
+            for (let i = 0; i < results.length; i++) {
+                const r = results[i];
+                if (r.status === 'fulfilled' && r.value.ok) {
+                    const data = await r.value.json();
+                    if (Array.isArray(data) && data.length) {
+                        if (i === 0) npointCount = data.length;
+                        this.mergeIntoList(data);
+                        anyReadOk = true;
                     }
                 }
             }
-            this.syncStatus = '🟢 云端实时互联已同步';
+            this.sortAndApplyTopBoss();
+
+            // 2. 如果是玩家主动上传，或者发现本地/旧云端有更多AI尚未同步进 npoint 主节点，立即自动回写主节点！
+            if (pushNow || (anyReadOk && this.list.length > npointCount)) {
+                const writeReqs = [
+                    fetch(cfg.cloudApiUrl, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.list), signal: ctrl.signal
+                    })
+                ];
+                if (cfg.backupApiUrl) {
+                    writeReqs.push(fetch(cfg.backupApiUrl, {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.list), signal: ctrl.signal
+                    }));
+                }
+                const wRes = await Promise.allSettled(writeReqs);
+                if (wRes.some(w => w.status === 'fulfilled' && w.value.ok)) anyReadOk = true;
+            }
+
+            if (!anyReadOk) throw new Error('Unreachable');
+            this.syncStatus = '🟢 全服云端天梯实时互通已连接';
             if (dot) dot.style.background = '#a6e3a1';
         } catch (e) {
-            this.syncStatus = '🟡 极速离线/P2P基因互联模式';
+            this.syncStatus = '🟡 极速离线/迁移码模式';
             if (dot) dot.style.background = '#f9e2af';
         } finally {
             clearTimeout(timer);
@@ -340,7 +372,6 @@ const Cloud = {
         }
     },
 
-    // 上传或更新自己的AI到天梯榜
     async uploadMyAI(customBot) {
         const myFit = customBot ? customBot.fit : AI.bestScore;
         const myDNA = customBot ? customBot.dna : AI.champDNA;
@@ -360,15 +391,14 @@ const Cloud = {
             dna: AI.fixDNA(myDNA)
         };
 
-        const idx = this.list.findIndex(x => x.author === entry.author && x.aiName === entry.aiName);
-        if (idx >= 0) this.list[idx] = entry; else this.list.push(entry);
+        this.mergeIntoList([entry]);
         this.sortAndApplyTopBoss();
-        this.openModal(true); // 立即刷新UI，0等待！
+        this.openModal(true);
         await this.syncCloud(true);
-        if (this.list[0].id === entry.id) {
+        if (this.list[0].aiName === entry.aiName) {
             alert(`🎉 恭喜！【${entry.aiName}】已登顶全服天梯第 1 名，正式接管主界面【全服守关大魔王】宝座！`);
         } else {
-            alert(`✅ 【${entry.aiName}】已成功录入天梯榜！你还可以点击“⚡派AI抢榜”直接挑战第1名夺取王座！`);
+            alert(`✅ 【${entry.aiName}】已成功上传至全服云端天梯榜！`);
         }
     },
 
@@ -376,25 +406,46 @@ const Cloud = {
         const item = this.list[idx]; if (!item) return;
         const str = btoa(encodeURIComponent(JSON.stringify(item)));
         navigator.clipboard?.writeText(str);
-        prompt('📋 复制下方【16维AI跨服基因码】发给群友，对方点击“导入基因码”即可将该AI同步进天梯：', str);
+        prompt('📋 复制下方【单个AI基因码】发到评论区或给好友挑战：', str);
+    },
+
+    exportFullBackup() {
+        const pack = {
+            type: 'FULL_SYNC',
+            gen: AI.gen,
+            bestScore: AI.bestScore,
+            champDNA: AI.champDNA,
+            list: this.list
+        };
+        const str = btoa(encodeURIComponent(JSON.stringify(pack)));
+        navigator.clipboard?.writeText(str);
+        prompt('🔄【跨浏览器整榜迁移码】已生成！\n复制下方代码，去另一个浏览器点击“📥 导入代码”，即可把整个天梯榜和你的AI代数完整同步过去：', str);
     },
 
     importCode() {
-        const str = prompt('📥 请粘贴好友分享的【16维AI跨服基因码】：');
+        const str = prompt('📥 请粘贴【单个AI基因码】或【跨浏览器整榜迁移码】：');
         if (!str) return;
         try {
-            const item = JSON.parse(decodeURIComponent(atob(str.trim())));
-            if (item && item.dna) {
-                item.dna = AI.fixDNA(item.dna);
-                this.list.push(item);
+            const obj = JSON.parse(decodeURIComponent(atob(str.trim())));
+            if (obj && obj.type === 'FULL_SYNC' && Array.isArray(obj.list)) {
+                this.mergeIntoList(obj.list);
+                if (obj.gen > AI.gen) AI.gen = obj.gen;
+                if (obj.bestScore > AI.bestScore) { AI.bestScore = obj.bestScore; AI.champDNA = AI.fixDNA(obj.champDNA); }
+                AI.save();
                 this.sortAndApplyTopBoss();
                 this.openModal(true);
-                alert(`🎉 成功导入【${item.author}】的【${item.aiName}】(战力:${item.fit})！`);
+                this.syncCloud(true);
+                alert(`🎉 跨浏览器整榜迁移成功！已同步 ${obj.list.length} 个天梯AI及最高战力(${AI.bestScore}分)！`);
+            } else if (obj && obj.dna) {
+                this.mergeIntoList([obj]);
+                this.sortAndApplyTopBoss();
+                this.openModal(true);
+                this.syncCloud(true);
+                alert(`🎉 成功导入【${obj.author}】的【${obj.aiName}】(战力:${obj.fit})！`);
             }
-        } catch(e) { alert('❌ 基因码格式有误！'); }
+        } catch(e) { alert('❌ 代码格式有误，请确认复制完整！'); }
     },
 
-    // 毫秒级秒开天梯弹窗（先渲染本地+缓存列表，后台异步刷新）
     openModal(show) {
         const mod = document.getElementById('cloud-modal');
         Game.paused = show;
@@ -411,12 +462,13 @@ const Cloud = {
         const mod = document.getElementById('cloud-modal');
         const listHtml = this.list.map((it, idx) => {
             const d = AI.fixDNA(it.dna);
+            const cleanName = it.aiName.replace(/^👑\s*/, '');
             const badge = idx === 0 ? '👑 NO.1 守关魔王' : (idx === 1 ? '🥈 NO.2' : (idx === 2 ? '🥉 NO.3' : `No.${idx+1}`));
             const bCol = idx === 0 ? '#f9e2af' : (idx === 1 ? '#fab387' : '#45475a');
             return `
             <div class="card" style="border-left:4px solid ${bCol};">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                    <span style="font-size:14px;font-weight:900;color:#f9e2af;">${badge} · ${it.aiName} <small style="color:#9399b2;">(G${it.gen})</small></span>
+                    <span style="font-size:14px;font-weight:900;color:#f9e2af;">${badge} · ${cleanName} <small style="color:#9399b2;">(G${it.gen})</small></span>
                     <span style="background:#11111b;padding:2px 8px;border-radius:10px;color:#a6e3a1;font-weight:bold;">战力: ${it.fit}</span>
                 </div>
                 <div style="font-size:11px;color:#a6adc8;margin-bottom:4px;">👤 培育者: <b style="color:#89b4fa;">${it.author}</b></div>
@@ -438,22 +490,29 @@ const Cloud = {
         }).join('');
 
         mod.innerHTML = `
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #313244;flex-shrink:0;">
-                <div>
-                    <b style="font-size:16.5px;color:#f9e2af;">🌐 全服 16维 AI 天梯争霸榜</b>
-                    <div style="font-size:11px;color:#a6adc8;">${this.syncStatus} | 夺得第1名自动接管首页大BOSS</div>
+            <div class="modal-header">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <div>
+                        <b style="font-size:16px;color:#f9e2af;">🌐 全服 16维 AI 天梯争霸榜</b>
+                        <div style="font-size:10.5px;color:#a6adc8;">${this.syncStatus}</div>
+                    </div>
+                    <button onclick="Cloud.openModal(false)" class="btn-sm">返回 ✖</button>
                 </div>
-                <button onclick="Cloud.openModal(false)" class="btn-sm">返回 ✖</button>
+                <div style="display:flex;gap:5px;">
+                    <button onclick="Cloud.uploadMyAI()" style="flex:1.3;padding:9px 4px;background:linear-gradient(135deg,#89b4fa,#cba6f7);color:#11111b;border:none;border-radius:8px;font-weight:900;font-size:12px;">
+                        ☁️ 上传我的AI (${AI.bestScore}分)
+                    </button>
+                    <button onclick="Cloud.exportFullBackup()" style="flex:0.85;padding:9px 4px;background:#313244;color:#f9e2af;border:1px solid #45475a;border-radius:8px;font-weight:bold;font-size:11.5px;">
+                        🔄 整榜迁移码
+                    </button>
+                    <button onclick="Cloud.importCode()" style="flex:0.75;padding:9px 4px;background:#313244;color:#a6e3a1;border:1px solid #45475a;border-radius:8px;font-weight:bold;font-size:11.5px;">
+                        📥 导入代码
+                    </button>
+                </div>
             </div>
-            <div style="display:flex;gap:6px;margin-bottom:10px;flex-shrink:0;">
-                <button onclick="Cloud.uploadMyAI()" style="flex:1.5;padding:10px;background:linear-gradient(135deg,#89b4fa,#cba6f7);color:#11111b;border:none;border-radius:8px;font-weight:900;font-size:12.5px;">
-                    ☁️ 上传我的最强AI (G${AI.gen} · ${AI.bestScore}分)
-                </button>
-                <button onclick="Cloud.importCode()" style="flex:0.75;padding:10px;background:#313244;color:#cdd6f4;border:1px solid #45475a;border-radius:8px;font-weight:bold;font-size:12px;">
-                    📥 导入基因码
-                </button>
+            <div class="modal-body">
+                ${listHtml}
             </div>
-            ${listHtml}
         `;
     }
 };
@@ -590,7 +649,11 @@ const Game = {
         ctx.fillStyle = '#cdd6f4'; ctx.fillRect(0,-4.5*s,32*s,9*s); ctx.strokeStyle = '#11111b'; ctx.lineWidth = 1.4; ctx.strokeRect(0,-4.5*s,32*s,9*s);
         ctx.beginPath(); ctx.arc(0,0,12*s,0,6.28); ctx.fillStyle = col; ctx.fill(); ctx.stroke();
         ctx.restore();
-        if (lbl) { ctx.fillStyle = col; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText((crown?'👑':'')+lbl, 0, -r-6); }
+        if (lbl) {
+            const cleanLbl = lbl.replace(/^👑\s*/, '');
+            ctx.fillStyle = col; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText((crown ? '👑' : '') + cleanLbl, 0, -r - 6);
+        }
         ctx.restore();
     },
     render() {
@@ -646,11 +709,18 @@ const AI = {
     init() {
         try {
             const adm = JSON.parse(localStorage.getItem('TANK_ADM_V2'));
-            if (adm) Object.assign(window.SERVER_CONFIG, adm);
+            if (adm) {
+                Object.assign(window.SERVER_CONFIG, adm);
+                // 强制确保主节点升级为站长最新的 npoint 接口
+                if (window.SERVER_CONFIG.cloudApiUrl.includes('kvdb.io')) {
+                    window.SERVER_CONFIG.cloudApiUrl = 'https://api.npoint.io/55fa615e9b8474d58c5c';
+                }
+            }
         } catch(e){}
         Admin.apply();
 
-        let sv = null; try { sv = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch(e){}
+        let sv = null;
+        try { sv = JSON.parse(localStorage.getItem(SAVE_KEY)) || JSON.parse(localStorage.getItem('TANK_CLOUD_ARENA_SAVE_V1')); } catch(e){}
         if (sv) {
             this.gen = sv.gen || 1; this.bestScore = sv.bestScore || 150;
             this.pWins = sv.pWins || 0; this.aiWins = sv.aiWins || 0;
@@ -730,7 +800,6 @@ const AI = {
         this.gen++; this.save(); this.spawnLabGen();
     },
 
-    // 16维高阶折线预演射击评估器：返回值 >0 为命中敌方，<0 为误伤自己
     simShot(bot, ang, allowSupp = false) {
         const spd = Game.cfg.bulSpd * 1.6, ws = Game.walls, hr = Game.cfg.tankR + 5;
         let bx = bot.x+Math.cos(ang)*(hr+2), by = bot.y+Math.sin(ang)*(hr+2), vx = Math.cos(ang)*spd, vy = Math.sin(ang)*spd, bnc = 0;
@@ -743,7 +812,7 @@ const AI = {
             for (let o of this.bots) if (!o.dead && o.id!==bot.id) {
                 const d = Game.dist(bx,by,o.x,o.y);
                 if (d < hr) return 2;
-                if (allowSupp && bnc > 0 && d < hr * 2.6) return 1; // 火力压制封走位
+                if (allowSupp && bnc > 0 && d < hr * 2.6) return 1;
             }
             const p = Game.player;
             if (!p.dead && !this.spectate) {
@@ -781,7 +850,6 @@ const AI = {
             if (pAct) { const dp = Game.dist(bot.x,bot.y,p.x,p.y); if (dp < minD) { minD = dp; tgt = p; } }
 
             let mx = 0, my = 0, nearWalls = 0, danger = false;
-            // 【维度1 & 2 & 3】闪避神经 + 矩阵折线预演(matrix) + 冷枪警惕(bncW)
             for (let b of Game.bullets) {
                 const dx = bot.x - b.x, dy = bot.y - b.y, d = Math.hypot(dx, dy);
                 if (d < 195) {
@@ -794,7 +862,6 @@ const AI = {
                     }
                 }
             }
-            // 【维度10 & 12 & 13】掩体卡视角(peek) + 防撞斥力(wall) + 死角逃逸(cor)
             for (let w of Game.walls) {
                 const cx = Math.max(w.x,Math.min(bot.x,w.x+w.w)), cy = Math.max(w.y,Math.min(bot.y,w.y+w.h)), dw = Game.dist(bot.x,bot.y,cx,cy);
                 if (dw < r + 24 && dw > 0.1) {
@@ -807,7 +874,6 @@ const AI = {
                 const ar = Game.arena, angC = Math.atan2((ar.topY+ar.ah/2)-bot.y, (Game.width/2)-bot.x);
                 mx += Math.cos(angC)*bot.dna.cor*2.2; my += Math.sin(angC)*bot.dna.cor*2.2;
             }
-            // 【维度11 & 14 & 15】假动作晃人(feint) + 交战距离(dist) + 蛇皮频率(freq)
             if (tgt) {
                 const a = Math.atan2(tgt.y - bot.y, tgt.x - bot.x);
                 if (Math.random() < bot.dna.freq || (danger && Math.random() < bot.dna.feint * 0.15)) bot.dir *= -1;
@@ -817,14 +883,12 @@ const AI = {
             }
             const mag = Math.hypot(mx, my);
             if (mag > 0.05) {
-                // 【维度9】绝境狂暴(rage)：高危或残弹时爆发移速微操
                 const boost = (danger || bot.ammo === 1) ? Math.min(1.08, 0.85 + bot.dna.rage * 0.1) : 0.9;
                 const s = Game.cfg.tankSpd * boost, vx = (mx/mag)*s, vy = (my/mag)*s;
                 bot.bAng = Math.atan2(vy, vx); bot.lvx = vx; bot.lvy = vy;
                 bot.x += vx; if (Game.walls.some(w => Game.circleRect(bot.x,bot.y,r,w.x,w.y,w.w,w.h))) { bot.x -= vx; bot.dir *= -1; }
                 bot.y += vy; if (Game.walls.some(w => Game.circleRect(bot.x,bot.y,r,w.x,w.y,w.w,w.h))) { bot.y -= vy; bot.dir *= -1; }
             }
-            // 【维度4 & 5 & 6 & 7 & 8】几何折射(iq) + 折线阴人(amb) + 动态预判(lead) + 火力压制(supp) + 弹药精算(consv)
             if (tgt && bot.ammo > 0 && bot.cd <= 0) {
                 const holdLastAmmo = (bot.ammo === 1 && minD > 115 && Math.random() < bot.dna.consv * 0.65);
                 if (!holdLastAmmo) {
@@ -863,7 +927,6 @@ const AI = {
             setTimeout(() => { if (!Game.inMenu && this.mode === 'DUEL') App.spawnDuelRound(); }, 900);
             return;
         }
-        // 🏆 AI 抢榜生死战模式 (3局2胜击败对手直接夺取其天梯排名与高战力！)
         if (this.mode === 'AI_VS_AI') {
             if (vId === 'ai_my') this.duelScore.b++; else this.duelScore.a++;
             App.updateTopBar();
@@ -1070,7 +1133,7 @@ const Admin = {
 
 /**
  * ====================================================================
- * 6. 触屏双摇杆与主循环
+ * 6. 触屏双摇杆与【恒定60FPS物理步长锁】主循环
  * ====================================================================
  */
 const TouchCtrl = {
@@ -1127,12 +1190,35 @@ const TouchCtrl = {
     }
 };
 
-function loop() {
+// 恒定 60FPS 物理时钟累加器 (彻底解决 120Hz 高刷屏浏览器加速 Bug)
+let lastFrameTime = performance.now();
+let timeAccumulator = 0;
+const STEP_MS = 1000 / 60;
+
+function loop(now) {
+    if (!now) now = performance.now();
+    let dt = now - lastFrameTime;
+    lastFrameTime = now;
+    if (dt > 100) dt = 100;
+
     if (!Game.paused) {
-        const t0 = performance.now();
-        for (let s = 0; s < AI.speed; s++) {
-            Game.updatePlayer(); Game.updateBullets(); AI.step();
-            if (performance.now() - t0 > 14) break;
+        if (AI.speed === 1) {
+            timeAccumulator += dt;
+            while (timeAccumulator >= STEP_MS) {
+                Game.updatePlayer();
+                Game.updateBullets();
+                AI.step();
+                timeAccumulator -= STEP_MS;
+            }
+        } else {
+            timeAccumulator = 0;
+            const t0 = performance.now();
+            for (let s = 0; s < AI.speed; s++) {
+                Game.updatePlayer();
+                Game.updateBullets();
+                AI.step();
+                if (performance.now() - t0 > 14) break;
+            }
         }
         Game.render();
     }
