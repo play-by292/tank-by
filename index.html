@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>几何坦克：AI觉醒 - 16维超神天梯版</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
@@ -102,6 +102,56 @@
         }
         .card { background: #1e1e2e; border: 1px solid #45475a; border-radius: 11px; padding: 11px 12px; margin-bottom: 10px; font-size: 12px; }
         .inp { width: 100%; padding: 7px 10px; background: #11111b; border: 1px solid #45475a; color: #fff; border-radius: 6px; font-size: 12.5px; margin-bottom: 6px; user-select: text; -webkit-user-select: text; }
+
+    /* ===== 2026 UI refresh: clearer hierarchy, touch-friendly controls ===== */
+    :root { color-scheme: dark; --bg:#0b0d16; --panel:#171a29; --panel2:#20243a; --line:#343a55; --muted:#a4abc4; --accent:#9bbcff; --mint:#a8e6b0; }
+    html, body { background:var(--bg); color:#eef0ff; font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    #home-screen { justify-content:flex-start; padding: max(18px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)); gap:10px; background: radial-gradient(ellipse at 50% 0%, #252b48 0%, #111321 46%, #090a11 100%); }
+    .top-pill { max-width:680px; width:100%; min-height:34px; justify-content:center; line-height:1.45; text-align:center; padding:7px 12px; background:rgba(168,230,176,.08); border-color:rgba(168,230,176,.22); }
+    .game-logo { font-size:clamp(25px, 5vw, 38px); text-align:center; letter-spacing:.2px; line-height:1.2; }
+    .game-sub { font-size:12px; text-align:center; max-width:560px; line-height:1.6; margin:0 0 5px; }
+    .boss-card { width:100%; max-width:680px; padding:16px; margin:4px 0 2px; border:1px solid rgba(249,226,175,.3); border-radius:20px; background:linear-gradient(145deg,rgba(36,40,62,.97),rgba(18,20,33,.98)); box-shadow:0 18px 44px rgba(0,0,0,.28); }
+    .boss-header { gap:10px; flex-wrap:wrap; }
+    .crown-tag { font-size:11px; padding:5px 9px; }
+    .boss-title-row { flex-wrap:wrap; gap:5px 12px; align-items:center; }
+    .boss-name { font-size:clamp(18px,4vw,25px); line-height:1.35; }
+    .boss-author { font-size:12px; }
+    .dna-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; padding:10px; border:1px solid rgba(255,255,255,.045); }
+    .dna-cell { font-size:12px; padding:2px 0; }
+    .mini-ladder { padding:8px 10px; }
+    .mini-row { gap:8px; align-items:center; font-size:11px; }
+    .mini-row span:first-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .stat-bar { gap:8px; flex-wrap:wrap; line-height:1.4; }
+    .stat-bar > div { flex:1 1 70px; }
+    .btn-group { max-width:680px; gap:10px; }
+    .btn-main { min-height:50px; padding:14px 16px; border-radius:14px; font-size:15px; line-height:1.35; box-shadow:0 8px 22px rgba(0,0,0,.18); }
+    .btn-main:focus-visible, button:focus-visible { outline:2px solid #cba6f7; outline-offset:3px; }
+    .b-red { background:linear-gradient(135deg,#ff9db8,#d0b1ff); }
+    .b-blue { background:linear-gradient(135deg,#a4c6ff,#9be5ee); }
+    .b-gold { background:linear-gradient(135deg,#ffe8ad,#ffc49c); }
+    .modal { background:rgba(9,10,17,.98); }
+    .modal-header { padding: max(12px, env(safe-area-inset-top)) 14px 12px; }
+    .modal-body { padding:14px 14px max(28px, env(safe-area-inset-bottom)); }
+    .card { border-color:var(--line); border-radius:14px; padding:14px; background:linear-gradient(145deg,#202338,#171927); }
+    .btn-sm, .hud-btn { min-height:34px; cursor:pointer; }
+    .hud-btn { border-radius:9px; padding:8px 4px; }
+    #touch-controls { padding-bottom:env(safe-area-inset-bottom); }
+    #joystick-zone { width:clamp(108px, 29vw, 136px); height:clamp(108px, 29vw, 136px); }
+    #fire-btn { width:clamp(94px, 25vw, 118px); height:clamp(94px, 25vw, 118px); }
+    .inp { font-size:16px; padding:10px; }
+    @media (min-width:700px) {
+      #home-screen { justify-content:center; }
+      .btn-group { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+      .btn-main { font-size:14px; padding:13px 10px; }
+      .dna-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+    }
+    @media (max-height:740px) {
+      #home-screen { justify-content:flex-start; }
+      .game-logo { font-size:25px; }
+      .game-sub { margin-bottom:0; }
+      .boss-card { padding:12px; }
+    }
+
     </style>
 </head>
 <body>
@@ -110,10 +160,10 @@
     <div id="home-screen">
         <div class="top-pill">
             <span class="status-dot" id="net-dot"></span>
-            <span id="notice-bar">🔥 天梯榜首自动成为全服守关大BOSS！支持16维极限炼蛊！</span>
+            <span id="notice-bar">云端不可用时也能继续对战；训练成果可用分享码迁移</span>
         </div>
         <div class="game-logo" onclick="Admin.clickLogo()">⚡ 几何坦克：AI觉醒</div>
-        <div class="game-sub">恒定60帧物理锁 · 16维超神神经网络 · 夺榜自动接管大魔王</div>
+        <div class="game-sub">16 维 AI 对战与进化实验室 · 本地进度优先保存 · 支持分享码迁移</div>
 
         <div class="boss-card">
             <div class="boss-header">
@@ -206,7 +256,7 @@
  */
 window.SERVER_CONFIG = window.SERVER_CONFIG || {
     adminPin: '8888',
-    noticeText: '🔥 天梯榜首自动成为全服守关大BOSS！16维极限AI等你来破！',
+    noticeText: '云端暂不可用也能继续游戏，联网后可重试同步',
     tankSpeed: 3.1,
     bulletSpeed: 4.4,
     maxBounces: 5,
@@ -334,62 +384,74 @@ const Cloud = {
 
     async syncCloud(pushNow = false) {
         const dot = document.getElementById('net-dot');
-        const mainUrl = 'https://api.npoint.io/55fa615e9b8474d58c5c';
-        const readUrls = [
-            mainUrl + '?t=' + Date.now(),
+        const mainUrl = (window.SERVER_CONFIG && window.SERVER_CONFIG.cloudApiUrl) ||
+            'https://api.npoint.io/55fa615e9b8474d58c5c';
+        const cacheKey = 'TANK_CACHED_CLOUD_LIST';
+        let connected = false;
+        let remoteData = null;
+
+        // Read candidates in parallel. Third-party CORS relays are not treated as
+        // reliable write endpoints; only the configured API may receive uploads.
+        const readCandidates = [
+            mainUrl + (mainUrl.includes('?') ? '&' : '?') + '_ts=' + Date.now(),
             'https://corsproxy.io/?' + encodeURIComponent(mainUrl),
             'https://api.allorigins.win/raw?url=' + encodeURIComponent(mainUrl)
         ];
+        const readOne = async (url) => {
+            const res = await fetchWithTimeout(url, { method: 'GET', cache: 'no-store' }, 4500);
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            const data = await res.json();
+            if (!Array.isArray(data)) throw new Error('Unexpected response');
+            return data;
+        };
 
-        let connected = false;
-        let remoteCount = 0;
-
-        // 1. 多线竞速读取：只要国内4G能连上任意一条线路，立刻成功返回！
-        for (let url of readUrls) {
+        try {
+            // First valid response wins; slow relays no longer block the UI.
+            remoteData = await Promise.any(readCandidates.map(readOne));
+            connected = true;
+            this.mergeIntoList(remoteData);
+            try { localStorage.setItem(cacheKey, JSON.stringify(remoteData)); } catch (e) {}
+        } catch (e) {
+            // Offline mode is a supported mode: retain the cached/local ladder.
             try {
-                const res = await fetchWithTimeout(url, { method: 'GET' }, 5500);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (Array.isArray(data) && data.length) {
-                        remoteCount = data.length;
-                        this.mergeIntoList(data);
-                        connected = true;
-                        break; // 读到最新云端数据后立即停止后续冗余请求
-                    }
-                }
-            } catch (e) {}
+                const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+                if (Array.isArray(cached)) this.mergeIntoList(cached);
+            } catch (e2) {}
         }
 
         this.sortAndApplyTopBoss();
 
-        // 2. 如果需要上传数据，或者本地有比云端更新的AI，尝试多线路写入
-        if (pushNow || (connected && this.list.length > remoteCount)) {
-            const writeUrls = [
-                mainUrl,
-                'https://corsproxy.io/?' + encodeURIComponent(mainUrl)
-            ];
-            for (let wUrl of writeUrls) {
-                try {
-                    const wRes = await fetchWithTimeout(wUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(this.list)
-                    }, 6000);
-                    if (wRes.ok) { connected = true; break; }
-                } catch (e) {}
+        // Do not claim an upload succeeded just because a proxy responded.
+        // A successful HTTP response from the configured endpoint is required.
+        if (pushNow) {
+            try {
+                const writeRes = await fetchWithTimeout(mainUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.list)
+                }, 5000);
+                if (writeRes.ok) {
+                    connected = true;
+                    try { localStorage.setItem(cacheKey, JSON.stringify(this.list)); } catch (e) {}
+                } else {
+                    connected = false;
+                    this.syncStatus = '🟠 已保存在本机，但云端写入未确认（HTTP ' + writeRes.status + '）';
+                }
+            } catch (e) {
+                connected = false;
+                this.syncStatus = '🟠 已保存在本机，云端暂不可达；可稍后重试或使用迁移码';
             }
         }
 
         if (connected) {
-            this.syncStatus = '🟢 全服云端天梯实时互通已连接';
-            if (dot) dot.style.background = '#a6e3a1';
+            this.syncStatus = '🟢 已读取云端排行榜' + (pushNow ? '；写入请求已获成功响应' : '');
+            if (dot) { dot.style.background = '#a6e3a1'; dot.title = '已连接云端'; }
         } else {
-            this.syncStatus = '🟡 极速离线/基因码互通模式';
-            if (dot) dot.style.background = '#f9e2af';
+            if (!this.syncStatus.startsWith('🟠')) this.syncStatus = '🟡 离线模式：本机排行榜仍可用，云端同步待重试';
+            if (dot) { dot.style.background = '#f9e2af'; dot.title = '离线或云端不可达'; }
         }
         this.sortAndApplyTopBoss();
     },
-
     async uploadMyAI(customBot) {
         const myFit = customBot ? customBot.fit : AI.bestScore;
         const myDNA = customBot ? customBot.dna : AI.champDNA;
@@ -525,6 +587,9 @@ const Cloud = {
                     </button>
                     <button onclick="Cloud.importCode()" style="flex:0.75;padding:9px 4px;background:#313244;color:#a6e3a1;border:1px solid #45475a;border-radius:8px;font-weight:bold;font-size:11.5px;">
                         📥 导入代码
+                    </button>
+                    <button onclick="Cloud.syncCloud(false).then(()=>Cloud.renderModalContent())" style="flex:0.7;padding:9px 4px;background:#313244;color:#eef0ff;border:1px solid #45475a;border-radius:8px;font-weight:bold;font-size:11.5px;">
+                        ↻ 重试同步
                     </button>
                 </div>
             </div>
@@ -752,10 +817,14 @@ const AI = {
         this.updateHomeNumbers();
     },
     save() {
-        localStorage.setItem(SAVE_KEY, JSON.stringify({
-            gen: this.gen, bestScore: this.bestScore, pWins: this.pWins, aiWins: this.aiWins,
-            champDNA: this.champDNA, pool: this.pool
-        }));
+        try {
+            localStorage.setItem(SAVE_KEY, JSON.stringify({
+                gen: this.gen, bestScore: this.bestScore, pWins: this.pWins, aiWins: this.aiWins,
+                champDNA: this.champDNA, pool: this.pool
+            }));
+        } catch (e) {
+            console.warn('本机存储不可用，当前进度可能无法跨会话保存。', e);
+        }
         this.updateHomeNumbers();
     },
     updateHomeNumbers() {
