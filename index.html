@@ -321,9 +321,22 @@ async function fetchWithTimeout(url, options = {}, timeoutMs = 6000) {
     }
 }
 
+// Render all player-controlled strings as text, never as executable HTML.
+function escapeHTML(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function safeNumber(value, fallback = 0) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+}
+
 const Cloud = {
     list: [],
     syncStatus: '🔄 正在连接全服云端...',
+    _syncPromise: null,
+    _pushQueued: false,
+    _uploading: false,
+    _lastPushAt: 0,
 
     init() {
         let merged = [...DEFAULT_LADDER];
@@ -340,12 +353,19 @@ const Cloud = {
 
     mergeIntoList(items) {
         const map = new Map();
-        [...this.list, ...items].forEach(it => {
-            if (it && it.aiName && it.dna) {
-                it.dna = AI.fixDNA(it.dna);
-                const key = `${it.aiName.replace(/^👑\s*/, '')}_${it.author}`;
-                if (!map.has(key) || map.get(key).fit < it.fit) map.set(key, it);
-            }
+        [...this.list, ...items].forEach(raw => {
+            if (!raw || typeof raw !== 'object' || !raw.aiName || !raw.dna || typeof raw.dna !== 'object') return;
+            const it = {
+                id: String(raw.id || ('p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7))).slice(0, 80),
+                aiName: String(raw.aiName).replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 24),
+                author: String(raw.author || '匿名玩家').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, 20),
+                gen: Math.max(0, Math.min(100000000, Math.floor(safeNumber(raw.gen, 0)))),
+                fit: Math.max(0, Math.min(100000000, safeNumber(raw.fit, 0))),
+                dna: AI.fixDNA(raw.dna)
+            };
+            if (!it.aiName) return;
+            const key = `${it.aiName.replace(/^👑\s*/, '')}_${it.author}`.toLocaleLowerCase();
+            if (!map.has(key) || safeNumber(map.get(key).fit) < it.fit) map.set(key, it);
         });
         this.list = Array.from(map.values());
     },
@@ -357,7 +377,7 @@ const Cloud = {
     sortAndApplyTopBoss() {
         this.list.sort((a, b) => b.fit - a.fit);
         if (this.list.length > 25) this.list = this.list.slice(0, 25);
-        localStorage.setItem(LADDER_KEY, JSON.stringify(this.list));
+        try { localStorage.setItem(LADDER_KEY, JSON.stringify(this.list)); } catch (e) { /* private mode / storage quota */ }
 
         const top = this.getTopBoss();
         const d = AI.fixDNA(top.dna);
@@ -376,13 +396,31 @@ const Cloud = {
 
         document.getElementById('home-mini-ladder').innerHTML = this.list.slice(0, 3).map((item, i) => `
             <div class="mini-row">
-                <span>${i===0?'🥇':(i===1?'🥈':'🥉')} <b>${item.aiName}</b> <small style="color:#9399b2;">by ${item.author}</small></span>
+                <span>${i===0?'🥇':(i===1?'🥈':'🥉')} <b>${escapeHTML(item.aiName)}</b> <small style="color:#9399b2;">by ${escapeHTML(item.author)}</small></span>
                 <span style="color:#a6e3a1;font-weight:bold;">${item.fit}分</span>
             </div>
         `).join('');
     },
 
+    // Same-tab request coalescing: never let repeated taps/training callbacks fire
+    // several full-list writes concurrently. Cross-user atomicity still needs a backend.
     async syncCloud(pushNow = false) {
+        if (this._syncPromise) {
+            if (pushNow) this._pushQueued = true;
+            return this._syncPromise;
+        }
+        this._syncPromise = (async () => {
+            let shouldPush = !!pushNow;
+            do {
+                this._pushQueued = false;
+                await this._syncCloudOnce(shouldPush);
+                shouldPush = this._pushQueued;
+            } while (shouldPush);
+        })().finally(() => { this._syncPromise = null; });
+        return this._syncPromise;
+    },
+
+    async _syncCloudOnce(pushNow = false) {
         const dot = document.getElementById('net-dot');
         const mainUrl = (window.SERVER_CONFIG && window.SERVER_CONFIG.cloudApiUrl) ||
             'https://api.npoint.io/55fa615e9b8474d58c5c';
@@ -424,6 +462,9 @@ const Cloud = {
         // Do not claim an upload succeeded just because a proxy responded.
         // A successful HTTP response from the configured endpoint is required.
         if (pushNow) {
+            // Small client-side throttle protects the public JSON endpoint from rapid repeated taps.
+            const waitMs = Math.max(0, 1500 - (Date.now() - this._lastPushAt));
+            if (waitMs) await new Promise(resolve => setTimeout(resolve, waitMs));
             try {
                 const writeRes = await fetchWithTimeout(mainUrl, {
                     method: 'POST',
@@ -431,6 +472,7 @@ const Cloud = {
                     body: JSON.stringify(this.list)
                 }, 5000);
                 if (writeRes.ok) {
+                    this._lastPushAt = Date.now();
                     connected = true;
                     try { localStorage.setItem(cacheKey, JSON.stringify(this.list)); } catch (e) {}
                 } else {
@@ -453,14 +495,20 @@ const Cloud = {
         this.sortAndApplyTopBoss();
     },
     async uploadMyAI(customBot) {
+        if (this._uploading) {
+            this.syncStatus = '⏳ 正在提交上一份 AI，请稍等片刻';
+            this.renderModalContent();
+            return;
+        }
+        this._uploading = true;
         const myFit = customBot ? customBot.fit : AI.bestScore;
         const myDNA = customBot ? customBot.dna : AI.champDNA;
         const author = prompt('🌍 登顶全服天梯榜！\n请输入你的培育师署名：', localStorage.getItem('TANK_AUTHOR') || '神秘炼蛊师');
-        if (!author) return;
-        localStorage.setItem('TANK_AUTHOR', author.slice(0, 12));
+        if (!author) { this._uploading = false; return; }
+        try { localStorage.setItem('TANK_AUTHOR', author.slice(0, 12)); } catch(e) {}
 
         const aiName = prompt('🤖 请为你的 16维 AI 命名：', customBot?.name || `👑战神G${AI.gen}`);
-        if (!aiName) return;
+        if (!aiName) { this._uploading = false; return; }
 
         const entry = {
             id: 'p_' + Date.now(),
@@ -474,8 +522,8 @@ const Cloud = {
         this.mergeIntoList([entry]);
         this.sortAndApplyTopBoss();
         this.openModal(true);
-        await this.syncCloud(true);
-        if (this.list[0].aiName === entry.aiName) {
+        try { await this.syncCloud(true); } finally { this._uploading = false; }
+        if (this.list[0] && this.list[0].aiName === entry.aiName) {
             alert(`🎉 恭喜！【${entry.aiName}】已登顶全服天梯第 1 名，正式接管主界面【全服守关大魔王】宝座！`);
         } else {
             alert(`✅ 【${entry.aiName}】已成功上传至全服云端天梯榜！`);
@@ -542,7 +590,7 @@ const Cloud = {
         const mod = document.getElementById('cloud-modal');
         const listHtml = this.list.map((it, idx) => {
             const d = AI.fixDNA(it.dna);
-            const cleanName = it.aiName.replace(/^👑\s*/, '');
+            const cleanName = escapeHTML(it.aiName.replace(/^👑\s*/, ''));
             const badge = idx === 0 ? '👑 NO.1 守关魔王' : (idx === 1 ? '🥈 NO.2' : (idx === 2 ? '🥉 NO.3' : `No.${idx+1}`));
             const bCol = idx === 0 ? '#f9e2af' : (idx === 1 ? '#fab387' : '#45475a');
             return `
@@ -551,7 +599,7 @@ const Cloud = {
                     <span style="font-size:14px;font-weight:900;color:#f9e2af;">${badge} · ${cleanName} <small style="color:#9399b2;">(G${it.gen})</small></span>
                     <span style="background:#11111b;padding:2px 8px;border-radius:10px;color:#a6e3a1;font-weight:bold;">战力: ${it.fit}</span>
                 </div>
-                <div style="font-size:11px;color:#a6adc8;margin-bottom:4px;">👤 培育者: <b style="color:#89b4fa;">${it.author}</b></div>
+                <div style="font-size:11px;color:#a6adc8;margin-bottom:4px;">👤 培育者: <b style="color:#89b4fa;">${escapeHTML(it.author)}</b></div>
                 <div style="font-size:10.5px;color:#89dceb;margin-bottom:8px;line-height:1.4;">
                     🧬 闪避:${d.dodge} | 预演:${d.matrix}帧 | 折射:${d.iq}级 | 阴人:${Math.round(d.amb*100)}% | 压制:${Math.round(d.supp*100)}% | 假动作:${Math.round(d.feint*100)}%
                 </div>
@@ -574,7 +622,7 @@ const Cloud = {
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
                     <div>
                         <b style="font-size:16px;color:#f9e2af;">🌐 全服 16维 AI 天梯争霸榜</b>
-                        <div style="font-size:10.5px;color:#a6adc8;">${this.syncStatus}</div>
+                        <div style="font-size:10.5px;color:#a6adc8;">${escapeHTML(this.syncStatus)}</div><div style="font-size:10px;color:#7f849c;margin-top:3px;">当前展示战力前 25 名 · 断网时仍可本地游玩</div>
                     </div>
                     <button onclick="Cloud.openModal(false)" class="btn-sm">返回 ✖</button>
                 </div>
